@@ -12,6 +12,7 @@ import { crest, flag, teamLink, vsRow, probBar, fixtureRow, formDots, note } fro
 import { table, played } from '../models/standings.js';
 import { predictMatch } from '../models/predict.js';
 import { rerender } from '../core/router.js';
+import { atmos } from '../fx/leagues.js';
 import { isLive, liveMatches, STATUS_LABEL, isInPlay } from '../services/live.js';
 
 export const fullBleed = true;
@@ -47,7 +48,7 @@ export async function render(el) {
   <section class="cine" id="cine" aria-label="Featured matchup and scroll story">
     <div class="cine-stage">
       <canvas class="cine-canvas" aria-hidden="true"></canvas>
-      <div class="cine-shade" aria-hidden="true"></div>
+      <div class="cine-shade" aria-hidden="true"></div>${atmos(0)}
       <figure class="cine-player a" aria-hidden="true"><img alt="" decoding="async"></figure>
       <figure class="cine-player b" aria-hidden="true"><img alt="" decoding="async"></figure>
       <div class="cine-title">
@@ -72,7 +73,7 @@ export async function render(el) {
     </div>
   </section>
   <div class="container">
-    <section class="section" id="matchday"><div class="section-head reveal"><div><h2>Matchday</h2><p id="md-sub"></p></div><a class="btn sm" href="#/live">All matches ${ICON.arrow}</a></div>
+    <section class="section" id="matchday"><div class="hud reveal" id="hud" style="margin-bottom:clamp(24px,3.2vw,44px)" aria-label="Platform status"></div><div class="section-head reveal"><div><h2>Matchday</h2><p id="md-sub"></p></div><a class="btn sm" href="#/live">All matches ${ICON.arrow}</a></div>
       <div class="grid g-32"><div class="panel flush reveal" id="today"></div><div class="panel pitch reveal" id="featured" style="--i:1"></div></div></section>
     <section class="section"><div class="section-head reveal"><div><h2>League leaders</h2><p>Top of each table in ${fmt.season(SEASON)}${seasons[0].live ? `, live from ${esc(seasons[0].source)}` : ' in the snapshot'}, results to ${fmt.date(seasons.map((x) => x.lastResult).sort().at(-1))}.</p></div><a class="btn sm" href="#/leagues">All tables ${ICON.arrow}</a></div>
       <div class="leaders reveal" id="leaders"></div></section>
@@ -241,6 +242,14 @@ function widgets(el, state, seasons, wc26) {
   const today = todayISO(), byLeague = Object.fromEntries(seasons.map((s) => [s.league, s]));
   const all = seasons.flatMap((s) => s.matches.map((m) => ({ s, m })));
   const elo = (id) => state.clubs[id]?.elo ?? 1400;
+
+  // command-centre strip: what the platform is running on right now. Every figure is read from the loaded data.
+  const liveSrc = seasons.find((s) => s.live), latest = seasons.map((s) => s.lastResult).filter(Boolean).sort().at(-1), sum = (f) => seasons.reduce((n, s) => n + f(s), 0);
+  $('#hud', el).innerHTML = `<div><span>Data mode</span><b class="${liveSrc ? 'on' : ''}">${liveSrc ? 'LIVE' : 'DEMO'}</b><small>${esc(liveSrc ? liveSrc.source : 'dated snapshot')}</small></div>
+    <div><span>Results to</span><b>${latest ? fmt.date(latest) : 'Not available'}</b><small>${fmt.season(SEASON)} season</small></div>
+    <div><span>Matches played</span><b>${sum((s) => s.played).toLocaleString('en-GB')}</b><small>of ${sum((s) => s.matches.length).toLocaleString('en-GB')} this season</small></div>
+    <div><span>Coverage</span><b>${seasons.length} leagues</b><small>${sum((s) => s.teams.length)} clubs</small></div>
+    <div><span>Forecast ratings</span><b>${fmt.date(state.asOf)}</b><small>five models and an ensemble</small></div>`;
 
   // today / next up
   const todays = all.filter((x) => x.m[1] === today), upcoming = all.filter((x) => !played(x.m) && x.m[1] >= today).sort((a, b) => (a.m[1] + (a.m[2] || '')).localeCompare(b.m[1] + (b.m[2] || '')));

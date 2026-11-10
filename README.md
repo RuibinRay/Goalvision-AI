@@ -75,6 +75,22 @@ The live figures are in `data/models/eval.json` and on the Validation tab, with 
 
 Model 5 is XGBoost's objective implemented in JavaScript. `backend/ml/train_xgboost.py` trains the same model with the XGBoost library and writes the same JSON format; it was not run in the environment that produced the bundled artefacts, so run it and read its report before relying on it.
 
+## The cinematic layer
+
+Motion is a layer on top of working pages (`css/fx.css`, `js/fx/`), never a requirement for them.
+
+| What | How it behaves |
+|---|---|
+| Choosing a league | The first time in a visit: the league emblem travels to the centre, the screen takes the league's colours, an energy wave leaves the emblem, the camera pushes through it into a floodlit stadium drawn on a 2D canvas, and the dashboard assembles itself. The dashboard is on screen about 1.6 s after the click. Later visits to the same league, and phones, get a 0.7 s short form. |
+| Choosing a club | The crest comes toward the screen in the club's colours, then lands on the dashboard's own crest (about 0.45 s to the dashboard). |
+| League identity | Each league has its own lighting and an original GOALVISION emblem (`js/fx/leagues.js`). They are not the leagues' official logos. Club pages are lit in the club's colours, with a drawn stadium outline, not a photograph. |
+| Crests and cards | Tilt, depth and a light that follows the pointer on crest tiles, club cards and league cards; magnetic call-to-action buttons. Pointer devices only; tables, charts and forms never move. |
+| Pages and tabs | Pages enter from the direction of travel through the navigation; detail pages push in. Tabs settle in 180 ms. |
+
+Rules that keep it safe: links stay ordinary links; keyboard activation, modified clicks, back and forward navigate at once; any click or key press skips a sequence; a timer removes the overlay whatever happens; the destination loads while the sequence plays. With reduced motion chosen, none of it runs. Transitions use the Web Animations API, so there is nothing to download before one can start.
+
+Not included by choice: a scroll-smoothing library. It would take over the wheel and trackpad from the browser; the home sequence is already scrubbed smoothly by ScrollTrigger.
+
 ## Architecture
 
 ```

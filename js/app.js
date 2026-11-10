@@ -2,6 +2,9 @@ import { route, start, rerender } from './core/router.js';
 import { loadRegistry, getPrefs, setPref } from './core/store.js';
 import { mountNav, mountFooter, applyTheme } from './components/chrome.js';
 import { hasBackend, backendHealth } from './services/live.js';
+import { initTransitions } from './fx/transitions.js';
+import { initInteractions } from './fx/interactions.js';
+import { lightRoute } from './fx/leagues.js';
 import './components/ui.js';
 
 // Preferences that must apply before first paint: theme and motion.
@@ -40,6 +43,8 @@ route('/dashboard',           () => import('./views/dashboard.js'));
 route('/404',                 () => Promise.resolve({ title: 'Not found', render: (el) => { el.innerHTML = '<div class="container page-head"><h1>Offside</h1><p class="lead">That page does not exist. <a class="link" href="#/">Back to the centre circle</a>.</p></div>'; } }));
 
 document.addEventListener('live-change', () => rerender());         // DEMO ↔ LIVE: pages drawn under the old mode redraw
+document.addEventListener('route', (e) => lightRoute(e.detail));    // league and club pages bring their own lighting
+initTransitions(); initInteractions();                              // cinematic league and club selection; pointer polish
 
 try {
   // A configured backend counts as LIVE only once it answers with a provider. Give it a moment so the first

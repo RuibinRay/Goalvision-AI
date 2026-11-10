@@ -10,6 +10,7 @@ import { table, clubMatches, clubFixtures, positionsByMatchday, played } from '.
 import { chart, lineSeries, areaStyle, radar, bars, css } from '../charts/charts.js';
 import { predictMatch } from '../models/predict.js';
 import { isLive, liveSquad } from '../services/live.js';
+import { atmos, GROUND } from '../fx/leagues.js';
 
 export const title = (p) => club(p.id).name;
 const UNAVAILABLE = ['Possession', 'Passing accuracy', 'Shots per game', 'xG and xGA', 'xG difference'];
@@ -28,7 +29,7 @@ export async function render(el, { id }, q) {
   document.documentElement.style.setProperty('--team-a', c.colors[0]);
 
   el.innerHTML = html`
-  <div class="club-hero" style="--c:${c.colors[0]};--c2:${c.colors[1]}"><div class="container club-hero-in">
+  <div class="club-hero" style="--c:${c.colors[0]};--c2:${c.colors[1]}">${atmos(8)}${GROUND}<div class="container club-hero-in">
     <div class="ch-crest">${crest(id, 148, { lazy: false })}</div>
     <div class="ch-main"><div class="row"><a class="chip" href="#/league/${lg.id}">${esc(lg.name)}</a><span class="chip">${esc(lg.country)}</span>${favBtn('clubs', id, c.name)}</div>
       <h1>${esc(c.name)}</h1><p class="lead">${fmt.ord(r.pos)} of ${t.length} in ${fmt.season(sKey)} · ${r.pts} points from ${r.p} matches · home ground ${esc(c.ground)}</p></div>

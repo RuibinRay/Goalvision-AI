@@ -63,7 +63,7 @@
 
 .cine-switch { position: absolute; left: 50%; bottom: clamp(18px, 3.4vh, 34px); translate: -50% 0; z-index: 6; display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: rgba(8, 13, 21, .74); border: 1px solid var(--line-2); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); max-width: calc(100vw - 24px); }
 .cine-switch > button { border: 0; background: transparent; color: var(--text-2); font-weight: 700; font-size: 13px; padding: 8px 14px; border-radius: 999px; cursor: pointer; white-space: nowrap; transition: background var(--dur), color var(--dur); }
-.cine-switch > button:hover { color: #fff; } .cine-switch > button[aria-pressed="true"] { background: #F7FAFF; color: #080C13; }
+.cine-switch > button:hover { color: #fff; } .cine-switch > button[aria-pressed="true"] { background: #F7FAFF; color: #070B16; }
 .cine-custom { position: absolute; bottom: calc(100% + 10px); left: 50%; translate: -50% 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: min(440px, 92vw); padding: 16px; background: #0d1622; }
 .cine-custom[hidden] { display: none; } .cine-custom .btn { grid-column: 1 / -1; }
 
@@ -83,10 +83,10 @@
 .cine:not(.static):not(.pinned) .cine-title > *, .cine:not(.static):not(.pinned) .cine-player img, .cine:not(.static):not(.pinned) .cine-switch, .cine:not(.static):not(.pinned) .cine-rail, .cine:not(.static):not(.pinned) .cine-hint { opacity: 0; }
 
 /* static composition (phones, reduced motion, no WebGL): one screen, then the chapters as ordinary blocks */
-.cine.static { background: #080C13; padding-bottom: 28px; }
+.cine.static { background: #070B16; padding-bottom: 28px; }
 .cine.static .cine-stage { height: auto; min-height: 0; overflow: visible; display: grid; gap: 26px; padding-bottom: 8px; }
 .cine.static .cine-canvas, .cine.static .cine-shade { height: 100svh; min-height: 620px; }
-.cine.static .cine-shade { background: linear-gradient(180deg, rgba(5, 8, 13, .72) 0%, rgba(5, 8, 13, .1) 30%, rgba(5, 8, 13, .25) 60%, #080C13 100%); }
+.cine.static .cine-shade { background: linear-gradient(180deg, rgba(5, 8, 13, .72) 0%, rgba(5, 8, 13, .1) 30%, rgba(5, 8, 13, .25) 60%, #070B16 100%); }
 .cine.static .cine-title { position: relative; left: auto; top: auto; transform: none; margin: clamp(84px, 13vh, 150px) auto 0; }
 .cine.static .cine-player { position: relative; height: min(46vh, 60vw); width: 50%; inset: auto; }
 .cine.static .cine-duo { display: flex; }

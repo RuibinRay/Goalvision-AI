@@ -169,7 +169,7 @@ export function createStadium(canvas, { reduced = false } = {}) {
     const beam = new THREE.Mesh(coneGeo, keep(new THREE.MeshBasicMaterial({ map: beamTex, color: 0xcfe2ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false })));
     beam.position.copy(origin); beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), dir.clone().normalize()); scene.add(beam);
     const spot = new THREE.SpotLight(0xe4eeff, 0, 0, .62, .7, 0); spot.position.copy(origin); spot.target.position.copy(target); scene.add(spot, spot.target);
-    rigs.push({ panel, glow, beam, spot });
+    rigs.push({ panel, glow, beam, spot, aim: beam.quaternion.clone() });
   }
   /* team-coloured wash from each end */
   const washA = new THREE.PointLight(0x168fff, 0, 150, 1.2), washB = new THREE.PointLight(0xbeff37, 0, 150, 1.2);
@@ -226,9 +226,12 @@ export function createStadium(canvas, { reduced = false } = {}) {
     const sway = reduced ? 0 : Math.sin(time * .22) * 1.4 * (1 - smooth(.55, .8, p));
     camera.position.set(pos.x + sway, pos.y, pos.z); camera.lookAt(tgt);
     const aerial = smooth(.62, .8, p), map = smooth(.82, .96, p), lights = Math.max(intro * .55, smooth(.0, .19, p));
+    const sweep = (createStadium.q ||= new THREE.Quaternion()), swing = (createStadium.e ||= new THREE.Euler());
     rigs.forEach((r, i) => {
       const on = Math.max(intro * .55, smooth(i * .03, i * .03 + .13, p)), flick = on > .04 && on < .5 && !reduced ? .65 + .35 * Math.sin(time * 37 + i * 9) * Math.sin(time * 13 + i) : 1, v = on * flick;
       r.panel.material.opacity = v; r.glow.material.opacity = v * .85 * (1 - aerial * .7); r.beam.material.opacity = v * .1 * (1 - aerial * .85) * (1 + (reduced ? 0 : .12 * Math.sin(time * .8 + i * 2))); r.spot.intensity = v * 2.1;
+      // the beams sweep slowly across the pitch, each on its own rhythm
+      if (!reduced) r.beam.quaternion.copy(r.aim).multiply(sweep.setFromEuler(swing.set(Math.sin(time * .31 + i * 1.7) * .075, 0, Math.sin(time * .23 + i * 2.3) * .1)));
     });
     hemi.intensity = .1 + lights * .34;
     pitchMat.emissiveIntensity = .06 + lights * .22 + aerial * .5 + map * .35 * (reduced ? 1 : .8 + .2 * Math.sin(time * 2));

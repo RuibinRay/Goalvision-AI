@@ -4,6 +4,7 @@ import { leagues, currentSeasons, clubsOf, club, registry, ucl, worldCupIndex, S
 import { crest, flag, note } from '../components/ui.js';
 import { table, uclLeaguePhase } from '../models/standings.js';
 import { isLive } from '../services/live.js';
+import { emblem, leagueVars } from '../fx/leagues.js';
 
 export const title = 'Leagues and competitions';
 export async function render(el) {
@@ -16,7 +17,7 @@ export async function render(el) {
     <header class="page-head"><h1>Leagues and competitions</h1><p class="lead">Ninety-six clubs across five leagues, the 36-team Champions League, and every World Cup since 1930. Participants come from the season's data file, so promotions and relegations update themselves.</p></header>
     <section class="section"><div class="section-head"><div><h2>Top five leagues, ${fmt.season(SEASON)}</h2><p>Results to ${fmt.date(seasons[0].lastResult)}. Select a league for standings, fixtures, leaders and the title race.</p></div></div>
       <div class="lg-grid">${seasons.map((s, i) => { const lg = leagues().find((l) => l.id === s.league), t = table(s);
-        return `<a class="card lgc reveal" style="--i:${i}" href="#/league/${lg.id}"><div class="lgc-top"><img class="flag" style="--s:44px" src="https://flagcdn.com/${lg.flag}.svg" alt="${esc(lg.country)}"><div><h3>${esc(lg.name)}</h3><span class="muted small">${esc(lg.country)} · ${s.teams.length} clubs · ${s.played}/${s.matches.length} played</span></div></div>
+        return `<a class="card lgc reveal" style="--i:${i};${leagueVars(lg.id)}" href="#/league/${lg.id}"><div class="lgc-top">${emblem(lg.id, 54)}<div><h3>${esc(lg.name)}</h3><span class="muted small">${esc(lg.country)} · ${s.teams.length} clubs · ${s.played}/${s.matches.length} played</span></div><img class="flag" style="--s:26px" src="https://flagcdn.com/${lg.flag}.svg" alt="${esc(lg.country)}"></div>
           <div class="lgc-lead">${crest(t[0].id, 54)}<div><span class="dim small">Leaders</span><b>${esc(club(t[0].id).name)}</b><span class="muted small num">${t[0].pts} pts from ${t[0].p}, ${fmt.signed(t[0].gd)} GD</span></div></div>
           <div class="lgc-crests">${clubsOf(lg.id).sort((a, b) => a.name.localeCompare(b.name)).map((c) => crest(c.id, 30)).join('')}</div></a>`; })}</div></section>
     <section class="section"><div class="section-head"><div><h2>International club competitions</h2><p>The Champions League uses the 36-club league phase introduced in 2024/25: eight matches each, top eight straight to the round of 16, ninth to 24th into a play-off round.</p></div></div>

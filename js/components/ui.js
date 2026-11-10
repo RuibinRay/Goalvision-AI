@@ -80,7 +80,10 @@ export function tabs(root, onShow) {
   const bar = $('.tabs', root); if (!bar) return;
   const show = (name) => {
     bar.querySelectorAll('button').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === name));
-    root.querySelectorAll('[data-pane]').forEach((p) => (p.hidden = p.dataset.pane !== name));
+    root.querySelectorAll('[data-pane]').forEach((p) => {
+      const on = p.dataset.pane === name, was = !p.hidden; p.hidden = !on;
+      if (on && !was) { p.classList.remove('pane-in'); void p.offsetWidth; p.classList.add('pane-in'); }   // a short settle when a tab opens (css/fx.css)
+    });
     onShow?.(name);
   };
   bar.addEventListener('click', (ev) => { const b = ev.target.closest('button[data-tab]'); if (b) show(b.dataset.tab); });

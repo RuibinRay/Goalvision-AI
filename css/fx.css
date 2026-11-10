@@ -1,0 +1,127 @@
+/* GOALVISION AI — the cinematic layer.
+   Competition lighting, hero atmosphere, the league and club transitions, crest interactions and directional page
+   entrances. Everything here is additive: with motion reduced the pages work exactly as before, without movement. */
+
+/* ───────── competition lighting ─────────
+   --lg-a / --lg-b tint the fixed backdrop, heroes and accents. They switch at once when a league or club page takes
+   over: animating an inherited property would restyle the whole document on every frame. */
+[data-theme="dark"] .bg-stadium { background:
+  radial-gradient(900px 520px at 12% -8%, color-mix(in srgb, var(--lg-a) 20%, transparent), transparent 62%),
+  radial-gradient(900px 560px at 96% 4%, color-mix(in srgb, var(--lg-b) 9%, transparent), transparent 60%),
+  radial-gradient(1200px 700px at 50% 118%, rgba(var(--pitch-rgb), .5), transparent 65%), var(--bg); }
+
+/* ───────── surfaces: dark metal and glass ───────── */
+[data-theme="dark"] .panel, [data-theme="dark"] .card, [data-theme="dark"] .stat { box-shadow: inset 0 1px 0 rgba(226, 234, 255, .06); }
+[data-theme="dark"] .nav.solid { border-bottom-color: rgba(226, 234, 255, .1); box-shadow: 0 1px 0 rgba(0, 0, 0, .5), 0 14px 40px -24px rgba(0, 0, 0, .9); }
+[data-theme="dark"] .btn:not(.primary):not(.blue) { background-image: var(--metal); }
+[data-theme="dark"] .select, [data-theme="dark"] .input, [data-theme="dark"] .seg { box-shadow: inset 0 1px 0 rgba(226, 234, 255, .04); }
+
+/* ───────── hero atmosphere: two slow spotlights, a fog bank, drifting motes ───────── */
+.atmos { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+/* Each beam is one soft gradient that only rotates: no blur filter and no clipping, so it costs a single composited layer. */
+.atmos i { position: absolute; top: -70%; left: 2%; width: 26%; height: 250%; transform-origin: 50% 28%; opacity: .55;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--lg-a) 34%, transparent), color-mix(in srgb, var(--lg-a) 12%, transparent) 45%, transparent 100%); animation: spot-a 12s var(--ease-in-out) infinite alternate; }
+.atmos i + i { left: auto; right: 2%; opacity: .42; background: radial-gradient(closest-side, color-mix(in srgb, var(--lg-b) 30%, transparent), color-mix(in srgb, var(--lg-b) 10%, transparent) 45%, transparent 100%); animation: spot-b 15s var(--ease-in-out) infinite alternate; }
+/* Under the navigation bar nothing moves, so its backdrop blur is not recomputed every frame. */
+.lg-hero .atmos, .club-hero .atmos { top: var(--nav-h); }
+.atmos b { position: absolute; inset: auto -25% -42% -25%; height: 78%; background: radial-gradient(closest-side, rgba(226, 234, 255, .075), transparent); animation: fog 22s ease-in-out infinite alternate; }
+.atmos em { position: absolute; left: var(--x); top: var(--y); width: 3px; height: 3px; border-radius: 50%; background: color-mix(in srgb, var(--lg-b) 60%, #fff); opacity: 0; animation: mote var(--t, 9s) linear infinite; animation-delay: var(--d, 0s); }
+@keyframes spot-a { from { transform: rotate(-15deg); } to { transform: rotate(9deg); } }
+@keyframes spot-b { from { transform: rotate(13deg); } to { transform: rotate(-10deg); } }
+@keyframes fog { from { transform: translateX(-7%); } to { transform: translateX(7%); } }
+@keyframes mote { 0% { opacity: 0; transform: translate(0, 12px); } 20% { opacity: .55; } 80% { opacity: .35; } 100% { opacity: 0; transform: translate(14px, -54px); } }
+[data-theme="light"] .atmos { display: none; }
+.cine .atmos { z-index: auto; } .cine .atmos i { opacity: .3; } .cine.static .cine-stage > .atmos { height: 100svh; min-height: 620px; }
+
+/* ───────── league identity ───────── */
+.lg-emblem { flex: none; filter: drop-shadow(0 6px 22px color-mix(in srgb, var(--lg-a) 55%, transparent)); }
+.lg-hero { position: relative; margin-top: calc(var(--nav-h) * -1); padding-top: var(--nav-h); overflow: hidden; border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--lg-a) 16%, transparent), transparent 85%); }
+.lg-hero > .container { position: relative; z-index: 1; }
+.lg-hero .page-head { padding-block: clamp(30px, 4.4vw, 62px) clamp(20px, 2.4vw, 32px); }
+[data-theme="dark"] .lg-hero h1 { text-shadow: 0 4px 40px rgba(7, 11, 22, .7); }
+.lg-hero::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--lg-a), var(--lg-b), transparent); opacity: .8; }
+.lg-watermark { position: absolute; right: clamp(-40px, -2vw, 0px); top: 50%; translate: 0 -46%; width: clamp(220px, 30vw, 420px); height: auto; opacity: .12; pointer-events: none; filter: none; }
+.view[data-league] .tabs button[aria-selected="true"] { border-bottom-color: var(--lg-a); }
+.view[data-league] .t thead th { box-shadow: inset 0 2px 0 color-mix(in srgb, var(--lg-a) 70%, transparent); }
+.lgc { position: relative; overflow: hidden; --c: var(--la); }
+.lgc::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 3px; background: linear-gradient(90deg, var(--la), var(--lb)); }
+.lgc-top .lg-emblem { filter: drop-shadow(0 4px 16px color-mix(in srgb, var(--la) 55%, transparent)); }
+.lgc-top .flag { margin-left: auto; align-self: flex-start; }
+
+/* ───────── club introduction ───────── */
+.club-hero { overflow: hidden; }
+.club-hero > .container { position: relative; z-index: 1; }
+.ch-ground { position: absolute; right: -2%; bottom: -1px; width: min(62%, 900px); height: auto; color: var(--c); opacity: .2; pointer-events: none; z-index: 0; }
+[data-theme="light"] .ch-ground { opacity: .12; }
+
+/* ───────── crests: tilt, depth and light (pointer devices only) ───────── */
+.cw::after, .clubcard::after, .lgc::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .25s ease;
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 0%), color-mix(in srgb, var(--c, var(--lg-a)) 30%, transparent), transparent 64%); }
+@media (hover: hover) and (pointer: fine) {
+  .cw, .clubcard, .lgc { transition: transform .4s var(--ease-out), border-color var(--dur), background var(--dur), box-shadow .4s var(--ease-out); }
+  .cw.tilting, .clubcard.tilting, .lgc.tilting { transition: transform 90ms linear, border-color var(--dur), box-shadow .2s ease; box-shadow: 0 22px 50px -22px color-mix(in srgb, var(--c, var(--lg-a)) 70%, transparent), inset 0 1px 0 rgba(226, 234, 255, .1); border-color: color-mix(in srgb, var(--c, var(--lg-a)) 70%, transparent); }
+  .cw:hover::after, .clubcard:hover::after, .lgc:hover::after { opacity: 1; }
+  .cw .crest, .clubcard .cc-top .crest, .lgc .lg-emblem { transition: transform .4s var(--ease-out); }
+  .tilting .crest, .tilting .lg-emblem { transition: transform 90ms linear; }
+  .t .team .crest, .fx .team .crest, .leader .crest { transition: transform .2s var(--ease-out); }
+  .t a.team:hover .crest, a.fx:hover .crest, .leader a:hover .crest { transform: scale(1.14); }
+  .magnet { transition: transform .4s var(--ease-out), box-shadow var(--dur), background var(--dur), border-color var(--dur); }
+  .magnet.tracking { transition: transform 90ms linear, box-shadow var(--dur), background var(--dur), border-color var(--dur); }
+}
+
+/* ───────── directional page entrances (replace the plain fade) ───────── */
+#main { overflow-x: clip; }      /* a page sliding in never widens the document */
+body:not(.reduced-motion) .view[data-enter="fwd"] { animation: enter-fwd .3s var(--ease-out) both; }
+body:not(.reduced-motion) .view[data-enter="back"] { animation: enter-back .3s var(--ease-out) both; }
+body:not(.reduced-motion) .view[data-enter="in"] { animation: enter-in .3s var(--ease-out) both; transform-origin: 50% 0; }
+body:not(.reduced-motion) .view[data-enter="out"] { animation: enter-out .3s var(--ease-out) both; transform-origin: 50% 0; }
+body:not(.reduced-motion) .view[data-enter="fade"] { animation: enter-fade .3s ease both; }
+@keyframes enter-fwd { from { opacity: 0; transform: translateX(30px); } }
+@keyframes enter-back { from { opacity: 0; transform: translateX(-30px); } }
+@keyframes enter-in { from { opacity: 0; transform: scale(.975) translateY(14px); } }
+@keyframes enter-out { from { opacity: 0; transform: scale(1.02); } }
+@keyframes enter-fade { from { opacity: 0; } }
+/* dashboard tabs: a quick settle, never a wait */
+body:not(.reduced-motion) [data-pane].pane-in { animation: pane-in .18s var(--ease-out) both; }
+@keyframes pane-in { from { opacity: 0; transform: translateY(6px); } }
+
+/* ───────── arrival cascade: after a league or club transition the dashboard assembles itself ───────── */
+body.fx-hold .view { visibility: hidden; }
+body:not(.reduced-motion) .arrive-item { animation: arrive-in .46s var(--ease-out) both; animation-delay: calc(var(--k, 0) * 32ms); }
+@keyframes arrive-in { from { opacity: 0; transform: translateY(16px); } }
+
+/* ───────── the transition overlay ───────── */
+.fxo { position: fixed; inset: 0; z-index: 400; overflow: hidden; contain: strict; cursor: pointer; --a: #168FFF; --b: #BEFF37; --c: #E9C15B; -webkit-tap-highlight-color: transparent; }
+.fxo-dim { position: absolute; inset: 0; background: #04060d; opacity: 0; }
+.fxo-glow { position: absolute; inset: -12%; opacity: 0; background:
+  radial-gradient(58% 54% at 50% 50%, color-mix(in srgb, var(--a) 52%, transparent), transparent 70%),
+  radial-gradient(44% 40% at 26% 74%, color-mix(in srgb, var(--b) 34%, transparent), transparent 70%),
+  radial-gradient(44% 40% at 76% 24%, color-mix(in srgb, var(--c) 26%, transparent), transparent 70%); }
+.fxo canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; }
+.fxo-ring { position: absolute; left: 50%; top: 50%; width: 240px; height: 240px; margin: -120px 0 0 -120px; border-radius: 50%; border: 2px solid var(--a); opacity: 0;
+  box-shadow: 0 0 46px var(--a), inset 0 0 34px color-mix(in srgb, var(--b) 55%, transparent); }
+.fxo-emblem, .fxo-crest { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform, opacity; }
+.fxo-emblem svg { display: block; filter: drop-shadow(0 0 34px color-mix(in srgb, var(--a) 80%, transparent)); }
+.fxo-crest { object-fit: contain; filter: drop-shadow(0 0 40px color-mix(in srgb, var(--a) 75%, transparent)) drop-shadow(0 18px 40px rgba(0, 0, 0, .6)); }
+.fxo-name { position: absolute; left: 0; right: 0; top: calc(50% + min(26vh, 150px)); margin: 0; text-align: center; font: 900 clamp(22px, 3.6vw, 48px)/1 var(--font-d); font-stretch: 125%; text-transform: uppercase; letter-spacing: .05em; color: #F7FAFF; text-shadow: 0 2px 30px #04060d; opacity: 0; }
+.fxo-name small { display: block; margin-top: 10px; font: 700 clamp(11px, 1vw, 13px)/1 var(--font-b); letter-spacing: .32em; color: var(--c); }
+.fxo-skip { position: absolute; right: var(--gutter); bottom: 22px; font: 600 12px/1 var(--font-b); letter-spacing: .08em; color: rgba(226, 234, 255, .5); opacity: 0; }
+
+/* ───────── home: command-centre status strip ───────── */
+.hud { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; border-radius: var(--r); overflow: hidden; border: 1px solid var(--line-2); background: var(--line); position: relative; }
+.hud > div { display: grid; gap: 4px; padding: 14px 18px; background: var(--glass-2); min-width: 0; }
+.hud span { font: 700 11px/1 var(--font-b); letter-spacing: .14em; text-transform: uppercase; color: var(--text-3); }
+.hud b { font: 800 clamp(17px, 1.5vw, 22px)/1.1 var(--font-d); font-stretch: 108%; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hud b.on { color: var(--green-ink); } .hud small { font-size: 12px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hud::after { content: ''; position: absolute; inset: 0 auto 0 0; width: 22%; background: linear-gradient(90deg, transparent, rgba(var(--blue-rgb), .1), transparent); animation: hud-scan 7s linear infinite; pointer-events: none; }
+@keyframes hud-scan { from { transform: translateX(-110%); } to { transform: translateX(560%); } }
+
+/* ───────── depth on scroll, where the browser can do it off the main thread ───────── */
+@supports (animation-timeline: view()) {
+  body:not(.reduced-motion) .ch-ground, body:not(.reduced-motion) .lg-watermark { animation: drift-down linear both; animation-timeline: view(); animation-range: exit 0% exit 100%; }
+  @keyframes drift-down { to { transform: translateY(46px); } }
+}
+
+/* small screens: lighter atmosphere */
+@media (max-width: 760px) { .atmos em, .atmos b { display: none; } .atmos i { width: 46%; opacity: .34; } .lg-watermark { opacity: .08; } .ch-ground { width: 110%; opacity: .14; } }

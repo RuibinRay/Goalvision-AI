@@ -2,8 +2,12 @@
    Night-stadium surfaces, electric blue for data and interaction, neon green for the live/primary accent,
    pitch green as a field colour, gold only for trophies. Club colours are used as lighting, never as data. */
 :root {
-  --bg: #080C13; --bg-2: #111A25; --bg-3: #172231; --bg-4: #1F2D3F;
-  --line: rgba(247, 250, 255, .08); --line-2: rgba(247, 250, 255, .15); --line-3: rgba(247, 250, 255, .28);
+  /* midnight navy, charcoal and dark metal */
+  --bg: #070B16; --bg-2: #101522; --bg-3: #171E30; --bg-4: #212A41;
+  --line: rgba(226, 234, 255, .08); --line-2: rgba(226, 234, 255, .15); --line-3: rgba(226, 234, 255, .28);
+  --metal: linear-gradient(180deg, rgba(226, 234, 255, .09), rgba(226, 234, 255, .02) 38%, rgba(226, 234, 255, 0) 100%);
+  /* competition lighting: a league or club page overrides these two to tint its accents */
+  --lg-a: var(--blue); --lg-b: var(--green);
   --text: #F7FAFF; --text-2: #B7C2D1; --text-3: #8492A6;
   --blue: #168FFF; --blue-2: #5FB2FF; --blue-rgb: 22, 143, 255;
   --green: #BEFF37; --green-ink: #BEFF37; --green-rgb: 190, 255, 55;
@@ -12,14 +16,14 @@
   --red: #FF5468; --red-rgb: 255, 84, 104; --amber: #FFC53D; --pos: #BEFF37; --neg: #FF5468;
   --on-accent: #0A1206;
   --team-a: #168FFF; --team-b: #BEFF37;
-  --glass: rgba(17, 26, 37, .68); --glass-2: rgba(23, 34, 49, .86); --scrim: rgba(8, 12, 19, .82);
+  --glass: rgba(16, 21, 34, .66); --glass-2: rgba(23, 30, 48, .88); --scrim: rgba(7, 11, 22, .82);
   --chart-1: #168FFF; --chart-2: #BEFF37; --chart-3: #E9C15B; --chart-4: #FF5468; --chart-5: #9A8CFF; --chart-6: #42E0C8; --chart-7: #F7FAFF;
   --font-d: 'Archivo', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
   --font-b: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --gutter: clamp(16px, 4vw, 56px); --maxw: 1480px; --nav-h: 64px;
   --r-sm: 8px; --r: 14px; --r-lg: 22px;
   --shadow: 0 18px 50px rgba(0, 0, 0, .5);
-  --ease: cubic-bezier(.2, .8, .2, 1); --ease-out: cubic-bezier(.16, 1, .3, 1); --dur: .22s;
+  --ease: cubic-bezier(.2, .8, .2, 1); --ease-out: cubic-bezier(.16, 1, .3, 1); --ease-in-out: cubic-bezier(.77, 0, .175, 1); --dur: .22s;
   color-scheme: dark;
 }
 [data-theme="light"] {
@@ -28,6 +32,7 @@
   --text: #0A111C; --text-2: #364559; --text-3: #5B6B80;
   --blue: #0A6BD0; --blue-2: #0A57AB; --green-ink: #3A6E00; --pos: #2F7D12; --neg: #C9243A; --red: #D42B43; --gold: #8A6A12; --amber: #B37A00;
   --glass: rgba(255, 255, 255, .82); --glass-2: rgba(255, 255, 255, .94); --scrim: rgba(237, 241, 246, .88);
+  --metal: linear-gradient(180deg, rgba(255, 255, 255, .9), rgba(255, 255, 255, 0) 60%);
   --chart-1: #0A6BD0; --chart-2: #4E9A00; --chart-3: #B8860B; --chart-4: #D42B43; --chart-5: #6B5BD6; --chart-6: #0E9C88; --chart-7: #0A111C;
   --shadow: 0 14px 40px rgba(20, 40, 70, .16);
   color-scheme: light;

@@ -6,6 +6,7 @@ import { crest, teamLink, formDots, fixtureRow, note, source, tabs, favBtn } fro
 import { table, played, positionsByMatchday, zoneOf, ZONE_LABEL } from '../models/standings.js';
 import { chart, lineSeries, palette, bars, css } from '../charts/charts.js';
 import { isLive, liveScorers } from '../services/live.js';
+import { emblem, atmos } from '../fx/leagues.js';
 
 export const title = (p) => league(p.id)?.name || 'League';
 export async function render(el, { id }, q) {
@@ -20,9 +21,11 @@ export async function render(el, { id }, q) {
   const nextMd = s.matches.find((m) => !played(m) && m[1] >= today)?.[0], lastMd = [...s.matches].reverse().find(played)?.[0];
   let md = Number(q.md) || (current ? nextMd || lastMd : lastMd) || mds[0];
 
-  el.innerHTML = html`<div class="container">
-    <header class="page-head lg-head"><div class="row" style="gap:18px;flex-wrap:nowrap"><img class="flag" style="--s:64px" src="https://flagcdn.com/${lg.flag}.svg" alt="${esc(lg.country)}"><div><h1>${esc(lg.name)}</h1><p class="lead" style="margin-top:8px">${esc(lg.country)} · ${n} clubs · ${s.played} of ${s.matches.length} matches played${s.lastResult ? ` · results to ${fmt.date(s.lastResult)}` : ''}${s.live ? ' · <span class="chip live">LIVE</span>' : ''}</p></div></div>
-      <div class="row">${favBtn('leagues', id, lg.name)}<label class="field" style="min-width:150px">Season<select class="select" id="season">${options(lg.seasons.map((x) => [x.season, fmt.season(x.season)]).reverse(), sKey)}</select></label></div></header>
+  el.dataset.league = id;      // the page takes the league's lighting (see css/fx.css)
+  el.innerHTML = html`<div class="lg-hero">${atmos(10)}${emblem(id, 420, 'lg-watermark')}<div class="container">
+    <header class="page-head lg-head"><div class="row" style="gap:20px;flex-wrap:nowrap">${emblem(id, 84)}<div><h1>${esc(lg.name)}</h1><p class="lead" style="margin-top:8px"><img class="flag" style="--s:20px;display:inline-block;vertical-align:-4px;margin-right:8px" src="https://flagcdn.com/${lg.flag}.svg" alt="">${esc(lg.country)} · ${n} clubs · ${s.played} of ${s.matches.length} matches played${s.lastResult ? ` · results to ${fmt.date(s.lastResult)}` : ''}${s.live ? ' · <span class="chip live">LIVE</span>' : ''}</p></div></div>
+      <div class="row">${favBtn('leagues', id, lg.name)}<label class="field" style="min-width:150px">Season<select class="select" id="season">${options(lg.seasons.map((x) => [x.season, fmt.season(x.season)]).reverse(), sKey)}</select></label></div></header></div></div>
+  <div class="container" style="padding-top:22px">
     <div class="tabs" role="tablist">${[['table', 'Table'], ['fixtures', 'Fixtures and results'], ['clubs', 'Clubs'], ['leaders', 'Leaders'], ['race', 'Season race']].map(([k, l]) => `<button type="button" role="tab" data-tab="${k}">${l}</button>`)}</div>
     <section data-pane="table"><div class="row between" style="margin-bottom:14px"><div class="row" id="venue">${seg([['all', 'Overall'], ['home', 'Home'], ['away', 'Away']], venue)}</div><div class="row" id="win">${seg([['season', 'Season'], ['5', 'Last 5'], ['10', 'Last 10']], win, 'green')}</div></div>
       <div class="table-wrap" id="tbl"></div><div class="legend" id="legend"></div>${source(s.source, s.fetchedAt, s.sourceUrl, { live: s.live })}</section>

@@ -34,7 +34,7 @@ export function mountNav(el) {
   });
   refreshStatus(); document.addEventListener('prefs', (e) => { if (e.detail.key === 'backend') refreshStatus(true); });
 }
-export const applyTheme = (t) => { document.documentElement.dataset.theme = t; document.querySelector('meta[name=theme-color]')?.setAttribute('content', t === 'dark' ? '#080C13' : '#EDF1F6'); };
+export const applyTheme = (t) => { document.documentElement.dataset.theme = t; document.querySelector('meta[name=theme-color]')?.setAttribute('content', t === 'dark' ? '#070B16' : '#EDF1F6'); };
 async function refreshStatus(force = false) {
   const chip = $('#status-chip'); if (!chip) return;
   const was = isLive(), h = hasBackend() ? await backendHealth(force) : null, label = chip.querySelector('span');
