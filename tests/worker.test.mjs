@@ -39,3 +39,22 @@ test('standings: normalised table with canonical clubs; malformed payload is rej
 test('a single visitor cannot exhaust the backend', async () => {
   payload = { matches: [] }; let limited = 0; for (let i = 0; i < 80; i++) { const r = await worker.fetch(new Request('https://api.test/v1/health', { headers: { 'cf-connecting-ip': '9.9.9.9' } }), env, cf); if (r.status === 429) limited++; } assert.ok(limited > 0);
 });
+
+// These two run last and with a roomy upstream budget, so they neither depend on nor eat into the nine-a-minute default above.
+test('single match: plain and URL-encoded ids both resolve (the site sends "fd%3A1")', async () => {
+  payload = { ...MATCH, id: 77 }; calls = [];
+  const roomy = { ...env, UPSTREAM_PER_MINUTE: '50' };   // these tests are about routing, not the upstream budget
+  const plain = await get('/v1/match/fd:77', roomy); assert.equal(plain.status, 200); assert.equal(plain.body.match.id, 'fd:77'); assert.equal(plain.body.match.home.club, 'arsenal');
+  const encoded = await get('/v1/match/fd%3A77', roomy); assert.equal(encoded.status, 200); assert.equal(encoded.body.match.id, 'fd:77');
+  assert.equal(calls.length, 1, 'the second request is served from cache'); assert.ok(calls[0].url.endsWith('/matches/77'));
+  assert.equal((await get('/v1/match/fd%3Aabc')).status, 404); assert.equal((await get('/v1/match/%E0%A4%A')).status, 404);
+});
+
+test('a rejected key: the provider message is passed on and the request is not retried', async () => {
+  const real = globalThis.fetch; let n = 0;
+  globalThis.fetch = async () => { n++; return new Response(JSON.stringify({ message: 'Your API token is invalid.', errorCode: 400 }), { status: 400, headers: { 'content-type': 'application/json' } }); };
+  try {
+    const r = await get('/v1/scorers?competition=ita.1', { ...env, FOOTBALL_DATA_KEY: '  short-key\n', UPSTREAM_PER_MINUTE: '50' });
+    assert.equal(r.status, 502); assert.match(r.body.error, /HTTP 400: Your API token is invalid/); assert.equal(n, 1); assert.ok(!JSON.stringify(r.body).includes('short-key'));
+  } finally { globalThis.fetch = real; }
+});

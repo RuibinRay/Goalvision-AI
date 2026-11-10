@@ -12,7 +12,8 @@
  *   /v1/club/:clubId                 coach + squad (football-data.org)
  *
  * Secrets (wrangler secret put …): FOOTBALL_DATA_KEY, API_FOOTBALL_KEY (either or both).
- * Vars (wrangler.toml): ALLOWED_ORIGINS (comma separated, default "*"), SEASON (API-Football season year).
+ * Vars (wrangler.toml): ALLOWED_ORIGINS (comma separated, default "*"), SEASON (API-Football season year),
+ *   UPSTREAM_PER_MINUTE (optional: upstream requests allowed per provider per minute, default 9 for the free plans).
  * No key ever reaches the browser; every visitor shares one cached upstream response.
  */
 import registry from '../../../data/registry.json' with { type: 'json' };
@@ -33,7 +34,7 @@ function allow(ip, rate = 60, perSeconds = 60) {
 }
 /* ── upstream budget: stay inside the provider's own limit (football-data.org free tier: 10 requests / minute) ── */
 const budget = { fd: { max: 9, used: [], window: 60000 }, af: { max: 9, used: [], window: 60000 } };
-function spend(p) { const b = budget[p], now = Date.now(); b.used = b.used.filter((t) => now - t < b.window); if (b.used.length >= b.max) return false; b.used.push(now); return true; }
+function spend(p, max) { const b = budget[p], now = Date.now(); b.used = b.used.filter((t) => now - t < b.window); if (b.used.length >= (max || b.max)) return false; b.used.push(now); return true; }
 
 async function upstream(provider, path, env) {
   const base = provider === 'fd' ? 'https://api.football-data.org/v4' : 'https://v3.football.api-sports.io';
@@ -41,7 +42,7 @@ async function upstream(provider, path, env) {
   const headers = provider === 'fd' ? { 'X-Auth-Token': (env.FOOTBALL_DATA_KEY || '').trim() } : { 'x-apisports-key': (env.API_FOOTBALL_KEY || '').trim() };
   let lastErr;
   for (let attempt = 0; attempt < 3; attempt++) {
-    if (!spend(provider)) throw Object.assign(new Error('Upstream request budget exhausted; serving cache where possible'), { status: 429 });
+    if (!spend(provider, Number(env.UPSTREAM_PER_MINUTE) || 0)) throw Object.assign(new Error('Upstream request budget exhausted; serving cache where possible'), { status: 429 });
     try {
       const r = await fetch(base + path, { headers, signal: AbortSignal.timeout(8000) });
       if (r.status === 429 || r.status >= 500) { lastErr = Object.assign(new Error(`Provider returned HTTP ${r.status}`), { status: 502 }); const ra = Number(r.headers.get('retry-after')); await new Promise((res) => setTimeout(res, Math.min(4000, (ra > 0 ? ra * 1000 : 400 * 2 ** attempt)))); continue; }
@@ -77,7 +78,9 @@ const label = (p) => (p === 'af' ? 'API-Football' : 'football-data.org');
 const bad = (msg, status = 400) => Object.assign(new Error(msg), { status });
 
 async function route(request, env, cfctx) {
-  const url = new URL(request.url), path = url.pathname.replace(/\/+$/, ''), q = url.searchParams, season = env.SEASON || '2026';
+  const url = new URL(request.url), q = url.searchParams, season = env.SEASON || '2026';
+  let path = url.pathname.replace(/\/+$/, '');
+  try { path = decodeURIComponent(path); } catch { /* malformed escape: leave it, the route will not match */ }   // the site sends "fd%3A123"
   if (path === '/v1/health') return { ok: true, provider: pick(env) ? label(pick(env)) : null, providers: { footballData: !!env.FOOTBALL_DATA_KEY, apiFootball: !!env.API_FOOTBALL_KEY }, refreshSeconds: TTL.live, season };
   const p = pick(env); if (!p) throw bad('No provider key configured on the backend', 503);
 
