@@ -65,7 +65,7 @@ export async function render(el) {
   <div class="container">
     <section class="section" id="matchday"><div class="section-head reveal"><div><h2>Matchday</h2><p id="md-sub"></p></div><a class="btn sm" href="#/live">All matches ${ICON.arrow}</a></div>
       <div class="grid g-32"><div class="panel flush reveal" id="today"></div><div class="panel pitch reveal" id="featured" style="--i:1"></div></div></section>
-    <section class="section"><div class="section-head reveal"><div><h2>League leaders</h2><p>Top of each table in the ${fmt.season(SEASON)} snapshot, results to ${fmt.date(seasons[0].lastResult)}.</p></div><a class="btn sm" href="#/leagues">All tables ${ICON.arrow}</a></div>
+    <section class="section"><div class="section-head reveal"><div><h2>League leaders</h2><p>Top of each table in ${fmt.season(SEASON)}${seasons[0].live ? `, live from ${esc(seasons[0].source)}` : ' in the snapshot'}, results to ${fmt.date(seasons.map((x) => x.lastResult).sort().at(-1))}.</p></div><a class="btn sm" href="#/leagues">All tables ${ICON.arrow}</a></div>
       <div class="leaders reveal" id="leaders"></div></section>
     <section class="section"><div class="section-head reveal"><div><h2>Players in form</h2><p>Top scorers of the 2026 FIFA World Cup, the most recent complete tournament in the data.</p></div><a class="btn sm" href="#/worldcup/2026">Tournament centre ${ICON.arrow}</a></div>
       <div class="trend reveal" id="trend"></div></section>
@@ -217,7 +217,7 @@ function widgets(el, state, seasons, wc26) {
       <dl class="kv-list" style="margin-top:16px"><dt>Expected goals</dt><dd class="num">${f.lambdas[0].toFixed(2)} – ${f.lambdas[1].toFixed(2)}</dd><dt>Most likely score</dt><dd class="num">${top.h}–${top.a} (${fmt.pct(top.p)})</dd><dt>Both teams to score</dt><dd class="num">${fmt.pct(f.market.btts)}</dd></dl>
       <a class="btn primary sm" style="margin-top:18px" href="#/predictions?home=${h}&away=${a}">Open the full forecast ${ICON.arrow}</a>
       <p class="src" style="margin-top:12px">Ensemble forecast from ratings as of ${fmt.date(state.asOf)}.</p>`;
-  } else featEl.innerHTML = '<div class="empty" style="border:0">No upcoming fixture in the snapshot.</div>';
+  } else featEl.innerHTML = '<div class="empty" style="border:0">No upcoming fixture found.</div>';
 
   // league leaders
   $('#leaders', el).innerHTML = seasons.map((s) => { const t = table(s), lg = league(s.league);

@@ -27,7 +27,10 @@ export const clubsOf = (lid) => Object.values(REG.clubs).filter((c) => c.league 
 export const allClubs = () => Object.values(REG.clubs);
 export const flagCode = (country) => REG.flags[country] ?? null;
 
-export const season = (lid, s = SEASON) => getJSON(`data/leagues/${lid}/${s}.json`);
+let liveSeason = null;   // registered by services/live.js: (leagueId) => Promise<season file | null>
+export const setLiveSeason = (fn) => { liveSeason = fn; };
+/** A league season file. The current season comes from the live backend when it is connected; otherwise, or if that fails, from the dated snapshot. */
+export const season = async (lid, s = SEASON) => (s === SEASON && liveSeason ? await liveSeason(lid) : null) || getJSON(`data/leagues/${lid}/${s}.json`);
 export const currentSeasons = () => Promise.all(REG.leagues.map((l) => season(l.id)));
 export const modelState = () => getJSON('data/models/state.json');
 export const modelEval = () => getJSON('data/models/eval.json');

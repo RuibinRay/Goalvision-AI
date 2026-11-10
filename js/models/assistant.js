@@ -22,7 +22,7 @@ export const EXAMPLES = ['Which Premier League teams have the strongest defenses
 export async function ask(question) {
   const q = fold(question);
   const leagueTable = async (lid) => { const s = await loadSeason(lid); return { s, t: table(s) }; };
-  const src = (s) => ({ name: `openfootball results, ${league(s.league).name} ${SEASON.replace('-', '/')}`, date: `results to ${s.lastResult}` });
+  const src = (s) => ({ name: `${s.live ? s.source : 'openfootball'} results, ${league(s.league).name} ${SEASON.replace('-', '/')}`, date: `results to ${s.lastResult}` });
 
   // 1. forecast between two clubs
   if (/(who will win|predict|forecast|chances|odds| vs | v | versus )/.test(q)) { const cs = findClubs(q);

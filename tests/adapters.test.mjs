@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { clubResolver, competitionMaps, fdMatch, fdStandings, fdScorers, afMatch, afStandings, afScorers, validMatch } from '../js/services/adapters.js';
+import { clubResolver, competitionMaps, fdMatch, fdStandings, fdSeason, fdScorers, afMatch, afStandings, afScorers, validMatch } from '../js/services/adapters.js';
 
 const registry = JSON.parse(readFileSync(new URL('../data/registry.json', import.meta.url), 'utf8'));
 const ctx = { resolve: clubResolver(registry), comps: competitionMaps(registry) };
@@ -74,4 +74,30 @@ test('API-Football standings and scorers', () => {
 });
 test('validMatch rejects malformed payloads', () => {
   const ok = fdMatch(FD, ctx); assert.ok(validMatch(ok)); assert.ok(!validMatch(null)); assert.ok(!validMatch({ ...ok, score: { ...ok.score, home: 1.5 } })); assert.ok(!validMatch({ ...ok, home: { name: null } })); assert.ok(!validMatch({ ...ok, goals: 'none' }));
+});
+
+test('football-data.org season → season file: local kick-off times, scores only when finished, canonical clubs', () => {
+  const fm = (md, utcDate, status, home, away, ft, ht) => ({ matchday: md, utcDate, status, homeTeam: { name: home }, awayTeam: { name: away }, score: { fullTime: { home: ft?.[0] ?? null, away: ft?.[1] ?? null }, halfTime: { home: ht?.[0] ?? null, away: ht?.[1] ?? null } } });
+  const body = { matches: [
+    fm(2, '2026-08-29T14:00:00Z', 'TIMED', 'Liverpool FC', 'Arsenal FC'),
+    fm(1, '2026-08-21T19:00:00Z', 'FINISHED', 'Arsenal FC', 'Liverpool FC', [2, 1], [1, 0]),
+    fm(1, '2026-08-22T14:00:00Z', 'IN_PLAY', 'Chelsea FC', 'Everton FC', [1, 0], [1, 0]),
+  ] };
+  const s = fdSeason(body, ctx, { league: 'eng.1', season: '2026-27' });
+  assert.deepEqual(s.cols, ['md', 'date', 'time', 'home', 'away', 'hg', 'ag', 'hth', 'hta']);
+  assert.deepEqual(s.matches.map((m) => m[0]), [1, 1, 2], 'sorted by matchday, then kick-off');
+  const first = s.matches[0]; assert.deepEqual([first[1], first[2]], ['2026-08-21', '20:00'], '19:00 UTC is 20:00 in London in August');
+  assert.deepEqual([s.teams[first[3]], s.teams[first[4]], ...first.slice(5)], ['arsenal', 'liverpool', 2, 1, 1, 0]);
+  assert.deepEqual(s.matches[1].slice(5), [null, null, null, null], 'a match in play has no final score yet');
+  assert.deepEqual(s.matches[2].slice(5), [null, null, null, null]);
+  assert.equal(s.played, 1); assert.equal(s.lastResult, '2026-08-21'); assert.equal(s.live, true); assert.equal(s.source, 'football-data.org');
+  assert.equal(new Set(s.teams).size, 4);
+  // a late kick-off rolls over to the next local day in Spain
+  const es = fdSeason({ matches: [fm(1, '2026-08-22T22:30:00Z', 'TIMED', 'FC Barcelona', 'Real Madrid CF')] }, ctx, { league: 'esp.1', season: '2026-27' });
+  assert.deepEqual([es.matches[0][1], es.matches[0][2]], ['2026-08-23', '00:30']);
+  // one unknown club, a club against itself, a bad date or an empty list rejects the whole season
+  assert.equal(fdSeason({ matches: [...body.matches, fm(3, '2026-09-01T14:00:00Z', 'TIMED', 'Arsenal FC', 'Some Unknown Town')] }, ctx, { league: 'eng.1', season: '2026-27' }), null);
+  assert.equal(fdSeason({ matches: [fm(1, '2026-09-01T14:00:00Z', 'TIMED', 'Arsenal FC', 'Arsenal')] }, ctx, { league: 'eng.1', season: '2026-27' }), null);
+  assert.equal(fdSeason({ matches: [fm(1, 'not a date', 'TIMED', 'Arsenal FC', 'Chelsea FC')] }, ctx, { league: 'eng.1', season: '2026-27' }), null);
+  assert.equal(fdSeason({ matches: [] }, ctx, { league: 'eng.1', season: '2026-27' }), null); assert.equal(fdSeason({ message: 'nope' }, ctx, { league: 'eng.1', season: '2026-27' }), null);
 });

@@ -7,10 +7,11 @@
  *   { id, provider, competition, utcDate, status, minute, home:{name, club}, away:{…}, score:{home, away, ht, et, pen},
  *     goals:[…], cards:[…], subs:[…], venue, referee, stats, lineups }
  */
-import { getPrefs } from '../core/store.js';
+import { getPrefs, setLiveSeason } from '../core/store.js';
 import { CONFIG } from '../core/config.js';
 
-export const backendUrl = () => (getPrefs().backend || CONFIG.backend || '').replace(/\/+$/, '');
+/** This browser's own backend if one is saved, else the site default. The saved value 'off' means DEMO mode was chosen here. */
+export const backendUrl = () => { const own = getPrefs().backend; return (own === 'off' ? '' : own || CONFIG.backend || '').replace(/\/+$/, ''); };
 export const hasBackend = () => !!backendUrl();
 let health = null, ready = false;
 /**
@@ -43,6 +44,18 @@ export const liveMatch = (id) => call('/v1/match/' + encodeURIComponent(id));
 export const liveStandings = (competition) => call('/v1/standings?competition=' + encodeURIComponent(competition));
 export const liveScorers = (competition) => call('/v1/scorers?competition=' + encodeURIComponent(competition));
 export const liveSquad = (clubId) => call('/v1/club/' + encodeURIComponent(clubId));
+
+/* The current league season from the backend, in the snapshot's own file shape, so tables, fixtures and club pages
+   run on live results unchanged. Kept for five minutes; a failure falls back to the snapshot and is retried next time. */
+const seasons = new Map();
+setLiveSeason((lid) => {
+  if (!isLive()) return null;
+  const key = backendUrl() + '|' + lid, hit = seasons.get(key);
+  if (hit && Date.now() - hit.at < 300000) return hit.promise;
+  const promise = call('/v1/season?competition=' + encodeURIComponent(lid)).then((s) => (Array.isArray(s?.matches) && s.matches.length && Array.isArray(s.teams) ? s : null), () => null);
+  seasons.set(key, { at: Date.now(), promise }); promise.then((s) => { if (!s) seasons.delete(key); });
+  return promise;
+});
 
 export const STATUS_LABEL = { SCHEDULED: 'Scheduled', LIVE_1H: 'First half', HT: 'Half-time', LIVE_2H: 'Second half', ET: 'Extra time', PENS: 'Penalties', FT: 'Full time', AET: 'After extra time', FT_PEN: 'Full time (pens)', POSTPONED: 'Postponed', SUSPENDED: 'Suspended', CANCELLED: 'Cancelled' };
 export const isInPlay = (s) => ['LIVE_1H', 'HT', 'LIVE_2H', 'ET', 'PENS'].includes(s);

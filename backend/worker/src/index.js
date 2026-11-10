@@ -7,6 +7,7 @@
  *   /v1/health                       which providers are configured
  *   /v1/matches?date=YYYY-MM-DD[&competition=eng.1]
  *   /v1/match/:id                    id = "fd:<n>" (football-data.org) or "af:<n>" (API-Football)
+ *   /v1/season?competition=eng.1     the whole current league season as a season file (football-data.org)
  *   /v1/standings?competition=eng.1
  *   /v1/scorers?competition=eng.1
  *   /v1/club/:clubId                 coach + squad (football-data.org)
@@ -17,10 +18,10 @@
  * No key ever reaches the browser; every visitor shares one cached upstream response.
  */
 import registry from '../../../data/registry.json' with { type: 'json' };
-import { clubResolver, competitionMaps, fdMatch, fdStandings, fdScorers, afMatch, afStandings, afScorers, validMatch } from '../../../js/services/adapters.js';
+import { clubResolver, competitionMaps, fdMatch, fdStandings, fdSeason, fdScorers, afMatch, afStandings, afScorers, validMatch } from '../../../js/services/adapters.js';
 
 const ctx = { resolve: clubResolver(registry), comps: competitionMaps(registry) };
-const TTL = { live: 30, matches: 300, match: 60, standings: 600, scorers: 1800, club: 86400, teams: 86400 };
+const TTL = { live: 30, matches: 300, match: 60, standings: 600, season: 300, scorers: 1800, club: 86400, teams: 86400 };
 const IN_PLAY = new Set(['LIVE_1H', 'HT', 'LIVE_2H', 'ET', 'PENS']);
 
 /* ── per-visitor rate limit: token bucket per IP (best effort, per isolate) ── */
@@ -36,15 +37,15 @@ function allow(ip, rate = 60, perSeconds = 60) {
 const budget = { fd: { max: 9, used: [], window: 60000 }, af: { max: 9, used: [], window: 60000 } };
 function spend(p, max) { const b = budget[p], now = Date.now(); b.used = b.used.filter((t) => now - t < b.window); if (b.used.length >= (max || b.max)) return false; b.used.push(now); return true; }
 
-async function upstream(provider, path, env) {
+async function upstream(provider, path, env, { timeout = 8000, attempts = 3 } = {}) {
   const base = provider === 'fd' ? 'https://api.football-data.org/v4' : 'https://v3.football.api-sports.io';
   // Trim: a key pasted with a trailing space or newline is otherwise rejected as invalid.
   const headers = provider === 'fd' ? { 'X-Auth-Token': (env.FOOTBALL_DATA_KEY || '').trim() } : { 'x-apisports-key': (env.API_FOOTBALL_KEY || '').trim() };
   let lastErr;
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < attempts; attempt++) {
     if (!spend(provider, Number(env.UPSTREAM_PER_MINUTE) || 0)) throw Object.assign(new Error('Upstream request budget exhausted; serving cache where possible'), { status: 429 });
     try {
-      const r = await fetch(base + path, { headers, signal: AbortSignal.timeout(8000) });
+      const r = await fetch(base + path, { headers, signal: AbortSignal.timeout(timeout) });
       if (r.status === 429 || r.status >= 500) { lastErr = Object.assign(new Error(`Provider returned HTTP ${r.status}`), { status: 502 }); const ra = Number(r.headers.get('retry-after')); await new Promise((res) => setTimeout(res, Math.min(4000, (ra > 0 ? ra * 1000 : 400 * 2 ** attempt)))); continue; }
       if (!r.ok) {   // any other 4xx is the key or the request itself: pass on what the provider said and do not retry
         const detail = await r.json().then((b) => String(b?.message || b?.error || '').slice(0, 140), () => '');
@@ -59,19 +60,24 @@ async function upstream(provider, path, env) {
       return body;
     } catch (e) { lastErr = e; if (e.final || (e.status && e.status !== 502)) throw e; await new Promise((res) => setTimeout(res, 300 * 2 ** attempt)); }
   }
+  if (lastErr?.name === 'TimeoutError' || lastErr?.name === 'AbortError') throw Object.assign(new Error('The provider did not answer in time'), { status: 504 });
   throw lastErr;
 }
 
-/** Cache wrapper: fresh → cached; stale → refetch; refetch fails → serve stale and say so. */
-async function cached(request, key, ttl, produce, cfctx) {
+/** Cache wrapper: fresh → cached; stale → refetch (or, with swr, answer with the old copy and refetch behind it); refetch fails → serve stale and say so. */
+async function cached(request, key, ttl, produce, cfctx, { swr = false } = {}) {
   const cache = caches.default, ck = new Request(new URL('/__cache/' + key, request.url).toString());
   const hit = await cache.match(ck), old = hit ? await hit.json() : null;
   if (old && Date.now() - Date.parse(old.fetchedAt) < ttl * 1000) return { ...old, cached: true };
-  try {
+  const refresh = (async () => {
     const fresh = { ...(await produce()), fetchedAt: new Date().toISOString(), cached: false };
-    cfctx.waitUntil(cache.put(ck, new Response(JSON.stringify(fresh), { headers: { 'content-type': 'application/json', 'cache-control': 'max-age=604800' } })));
+    await cache.put(ck, new Response(JSON.stringify(fresh), { headers: { 'content-type': 'application/json', 'cache-control': 'max-age=604800' } }));
     return fresh;
-  } catch (e) { if (old) return { ...old, cached: true, stale: true, staleReason: e.message }; throw e; }
+  })();
+  cfctx.waitUntil(refresh.catch(() => {}));   // the refresh finishes and fills the cache even if this visitor has already gone
+  // Large, slow resources: answer at once with the previous copy (its fetchedAt says how old it is) and refresh behind it.
+  if (old && swr) return { ...old, cached: true, refreshing: true };
+  try { return await refresh; } catch (e) { if (old) return { ...old, cached: true, stale: true, staleReason: e.message }; throw e; }
 }
 const pick = (env) => (env.API_FOOTBALL_KEY ? 'af' : env.FOOTBALL_DATA_KEY ? 'fd' : null);
 const label = (p) => (p === 'af' ? 'API-Football' : 'football-data.org');
@@ -105,6 +111,16 @@ async function route(request, env, cfctx) {
       if (!validMatch(match)) throw bad('The provider returned a match in an unexpected shape', 502);
       return { provider: label(prov), refreshSeconds: IN_PLAY.has(match.status) ? TTL.live : TTL.match, match };
     }, cfctx);
+  }
+  if (path === '/v1/season') {   // the whole current season of one of the five leagues, in the site's season-file shape
+    const lg = registry.leagues.find((l) => l.id === q.get('competition')); if (!lg) throw bad('Unknown league');
+    if (!env.FOOTBALL_DATA_KEY || !lg.fd) throw bad('Season results come from football-data.org, which is not configured', 404);
+    return cached(request, `season:fd:${lg.id}:${season}`, TTL.season, async () => {
+      const s = fdSeason(await upstream('fd', `/competitions/${lg.fd}/matches?season=${season}`, env, { timeout: 25000, attempts: 2 }), ctx, { league: lg.id, season: `${season}-${String(Number(season) + 1).slice(-2)}` });
+      // Every club must resolve to a canonical id, belong to this league and match the registry's club count, or nothing is served.
+      if (!s || s.teams.length !== lg.seasons.at(-1).teams || !s.teams.every((id) => registry.clubs[id]?.league === lg.id)) throw bad('The provider returned a season in an unexpected shape', 502);
+      return { provider: label('fd'), ...s };
+    }, cfctx, { swr: true });
   }
   if (path === '/v1/standings' || path === '/v1/scorers') {
     const comp = ctx.comps.byId[q.get('competition')]; if (!comp) throw bad('Unknown competition');

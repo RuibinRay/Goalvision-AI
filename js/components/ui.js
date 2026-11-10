@@ -21,7 +21,7 @@ export const nation = (name, { size = 22 } = {}) => `<span class="team">${flag(n
 export const formDots = (list, cls = '') => `<span class="formdots ${cls}" aria-label="Recent form: ${list.join(' ')}">${list.map((r) => `<i class="${r}">${r}</i>`).join('')}</span>`;
 export const stat = (k, v, s = '') => `<div class="stat${v == null ? ' na' : ''}"><span class="k">${k}</span><span class="v num">${v ?? 'Not available'}</span>${s ? `<span class="s">${s}</span>` : ''}</div>`;
 export const note = (text, cls = '') => `<div class="note ${cls}">${ICON.info}<div>${text}</div></div>`;
-export const source = (name, date, url) => `<p class="src">Source: ${url ? `<a href="${url}" target="_blank" rel="noopener">${esc(name)}</a>` : esc(name)}${date ? ` · snapshot ${fmt.stamp(date)}` : ''}</p>`;
+export const source = (name, date, url, { live = false } = {}) => `<p class="src">Source: ${url ? `<a href="${url}" target="_blank" rel="noopener">${esc(name)}</a>` : esc(name)}${date ? ` · ${live ? 'last refresh' : 'snapshot'} ${fmt.stamp(date)}` : ''}</p>`;
 export const favBtn = (kind, id, label) => `<button class="fav-btn" type="button" data-fav="${kind}" data-id="${esc(id)}" aria-pressed="${isFav(kind, id)}" aria-label="Add ${esc(label)} to favourites" title="Favourite">${ICON.star}</button>`;
 export const vsRow = (label, a, b, { d = 0, lowerBetter = false, suffix = '' } = {}) => {
   const A = a ?? 0, B = b ?? 0, tot = Math.abs(A) + Math.abs(B) || 1, aw = lowerBetter ? A < B : A > B, bw = lowerBetter ? B < A : B > A;
@@ -31,15 +31,15 @@ export const vsRow = (label, a, b, { d = 0, lowerBetter = false, suffix = '' } =
 export const probBar = ([h, d, a], cls = '') => `<div class="prob ${cls}" role="img" aria-label="Home ${fmt.pct(h)}, draw ${fmt.pct(d)}, away ${fmt.pct(a)}"><span class="h" style="flex-basis:${(h * 100).toFixed(1)}%">${fmt.pct(h)}</span><span class="d" style="flex-basis:${(d * 100).toFixed(1)}%">${fmt.pct(d)}</span><span class="a" style="flex-basis:${(a * 100).toFixed(1)}%">${fmt.pct(a)}</span></div>`;
 
 /** Status of a snapshot fixture relative to today. Unplayed past fixtures are reported as missing, never guessed. */
-export function fixtureStatus(m, today = todayISO()) {
+export function fixtureStatus(m, today = todayISO(), live = false) {
   if (played(m)) return { code: 'FT', label: 'Full time' };
-  if (m[1] < today) return { code: 'PENDING', label: 'Result not in snapshot' };
+  if (m[1] < today) return { code: 'PENDING', label: live ? 'Awaiting result' : 'Result not in snapshot' };
   if (m[1] === today) return { code: 'TODAY', label: 'Today' };
   return { code: 'SCHEDULED', label: 'Scheduled' };
 }
 /** One league fixture row. `s` is the season file, `m` a match row. */
 export function fixtureRow(s, m, { showDate = true } = {}) {
-  const st = fixtureStatus(m), h = s.teams[m[3]], a = s.teams[m[4]], i = s.matches.indexOf(m);
+  const st = fixtureStatus(m, undefined, s.live), h = s.teams[m[3]], a = s.teams[m[4]], i = s.matches.indexOf(m);
   const mid = st.code === 'FT' ? `<span class="score num">${m[5]}–${m[6]}</span><span class="when">${showDate ? fmt.day(m[1]) : 'FT'}</span>`
     : `<span class="ko num">${m[2] || 'TBC'}</span><span class="when">${st.code === 'PENDING' ? 'Result pending' : showDate ? fmt.day(m[1]) : st.label}</span>`;
   return `<a class="fx" href="#/match/lg~${s.league}~${s.season}~${i}">${teamLink(h, { link: false })}<span class="mid">${mid}</span>${teamLink(a, { link: false })}</a>`;

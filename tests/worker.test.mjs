@@ -58,3 +58,19 @@ test('a rejected key: the provider message is passed on and the request is not r
     assert.equal(r.status, 502); assert.match(r.body.error, /HTTP 400: Your API token is invalid/); assert.equal(n, 1); assert.ok(!JSON.stringify(r.body).includes('short-key'));
   } finally { globalThis.fetch = real; }
 });
+
+test('season: a whole league season in season-file shape; a wrong club count or unknown club is rejected', async () => {
+  const { readFileSync } = await import('node:fs');
+  const reg = JSON.parse(readFileSync(new URL('../data/registry.json', import.meta.url), 'utf8'));
+  const names = Object.values(reg.clubs).filter((c) => c.league === 'eng.1').map((c) => c.name), roomy = { ...env, UPSTREAM_PER_MINUTE: '50' };
+  const round = (list) => ({ matches: Array.from({ length: list.length / 2 }, (_, i) => ({ matchday: 1, utcDate: '2026-08-22T14:00:00Z', status: 'FINISHED', homeTeam: { name: list[2 * i] }, awayTeam: { name: list[2 * i + 1] }, score: { fullTime: { home: 1, away: 0 }, halfTime: { home: 0, away: 0 } } })) });
+  payload = round(names); calls = [];
+  const r = await get('/v1/season?competition=eng.1', roomy);
+  assert.equal(r.status, 200); assert.equal(r.body.teams.length, 20); assert.equal(r.body.matches.length, 10); assert.equal(r.body.played, 10);
+  assert.equal(r.body.league, 'eng.1'); assert.equal(r.body.season, '2026-27'); assert.equal(r.body.live, true); assert.ok(r.body.fetchedAt);
+  assert.ok(calls[0].url.endsWith('/competitions/PL/matches?season=2026'));
+  payload = round(names); assert.equal((await get('/v1/season?competition=esp.1', roomy)).status, 502, 'twenty English clubs are not La Liga');
+  payload = round(names.slice(0, 18)); assert.equal((await get('/v1/season?competition=ger.1', roomy)).status, 502, 'eighteen English clubs are not the Bundesliga');
+  payload = round([...names.slice(0, 19), 'Unknown Rovers']); assert.equal((await get('/v1/season?competition=ita.1', roomy)).status, 502);
+  assert.equal((await get('/v1/season?competition=ucl', roomy)).status, 400); assert.equal((await get('/v1/season', roomy)).status, 400);
+});

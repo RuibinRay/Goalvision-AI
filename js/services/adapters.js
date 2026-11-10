@@ -48,6 +48,33 @@ export function fdMatch(m, ctx) {
   };
 }
 const fdLineup = (t) => ({ formation: t.formation || null, coach: t.coach?.name || null, start: (t.lineup || []).map((p) => ({ name: p.name, number: num(p.shirtNumber), position: p.position || null })), bench: (t.bench || []).map((p) => ({ name: p.name, number: num(p.shirtNumber), position: p.position || null })) });
+/** The five leagues' own time zones: season files carry local kick-off dates and times, as the open archive does. */
+const LEAGUE_TZ = { 'eng.1': 'Europe/London', 'esp.1': 'Europe/Madrid', 'ita.1': 'Europe/Rome', 'ger.1': 'Europe/Berlin', 'fra.1': 'Europe/Paris' };
+function localKickoff(utc, tz) {
+  const d = new Date(utc); if (!utc || Number.isNaN(+d)) return null;
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: tz || 'UTC', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(d).map((x) => [x.type, x.value]));
+  return [`${p.year}-${p.month}-${p.day}`, `${p.hour}:${p.minute}`];
+}
+/**
+ * A whole league season (GET /competitions/{code}/matches?season=YYYY) in the shape of data/leagues/<id>/<season>.json,
+ * so every table, fixture list and club page can run on live results unchanged. Scores are taken only from finished
+ * matches. One unknown club or malformed row rejects the whole season: a partial table would be worse than none.
+ */
+export function fdSeason(body, ctx, { league, season }) {
+  const list = body?.matches; if (!Array.isArray(list) || !list.length) return null;
+  const teams = [], index = new Map(), rows = [];
+  const team = (t) => { const id = ctx.resolve(t?.name) ?? ctx.resolve(t?.shortName); if (!id) return -1; if (!index.has(id)) { index.set(id, teams.length); teams.push(id); } return index.get(id); };
+  for (const m of list) {
+    const when = localKickoff(m?.utcDate, LEAGUE_TZ[league]), h = team(m?.homeTeam), a = team(m?.awayTeam), md = num(m?.matchday);
+    if (!when || h < 0 || a < 0 || h === a || md === null) return null;
+    const done = m.status === 'FINISHED' || m.status === 'AWARDED', ft = done ? pair(m.score?.fullTime) : null, ht = ft ? pair(m.score?.halfTime) : null;
+    rows.push([md, when[0], when[1], h, a, ft ? ft[0] : null, ft ? ft[1] : null, ht ? ht[0] : null, ht ? ht[1] : null]);
+  }
+  const key = (r) => `${String(r[0]).padStart(3, '0')} ${r[1]} ${r[2]}`;
+  rows.sort((x, y) => (key(x) < key(y) ? -1 : key(x) > key(y) ? 1 : 0));
+  const played = rows.filter((r) => r[5] !== null);
+  return { league, season, source: 'football-data.org', sourceUrl: 'https://www.football-data.org/', live: true, lastResult: played.map((r) => r[1]).sort().at(-1) ?? null, played: played.length, teams, cols: ['md', 'date', 'time', 'home', 'away', 'hg', 'ag', 'hth', 'hta'], matches: rows };
+}
 export function fdStandings(body, ctx) {
   const total = (body?.standings || []).find((s) => s.type === 'TOTAL') || (body?.standings || [])[0];
   if (!total || !Array.isArray(total.table)) return null;

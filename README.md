@@ -32,11 +32,11 @@ The site is static, so it can never hold an API key. It therefore ships in **DEM
 | | DEMO (this repository) | LIVE (after deploying `backend/worker`) |
 |---|---|---|
 | League tables, fixtures, results | openfootball snapshot (results to 20 Sep 2026 at build time) | current, from the provider |
-| Live scores, clocks, events | not available; past-dated fixtures show "result pending" | provider refresh cadence, last refresh time shown |
+| Live scores, clocks, events | not available; past-dated fixtures show "result pending" | scores and match status at the provider's refresh cadence, last refresh time shown; goals, cards and line-ups only on provider plans that include them |
 | Line-ups, timelines, match statistics | 147 international matches (StatsBomb Open Data) | per provider plan |
 | Squads, managers, top scorers, Champions League 2026/27 | not available | yes |
 
-Switch to LIVE by setting `backend` in [js/core/config.js](js/core/config.js), or per browser under **My Dashboard → Data connection**. The site only reports LIVE once that backend answers and says it has a provider key; if it is unreachable or has no key yet, the site stays in DEMO and the status chip says why.
+Switch to LIVE by setting `backend` in [js/core/config.js](js/core/config.js), or per browser under **My Dashboard → Data connection**. In LIVE mode the current season of each league is loaded from the backend in the same file shape as the snapshot, so every table, fixture list and club page updates without a rebuild. The site only reports LIVE once that backend answers and says it has a provider key; if it is unreachable or has no key yet, the site stays in DEMO and the status chip says why.
 
 ## Data sources
 
@@ -117,7 +117,7 @@ Then open http://localhost:8777. The site needs a static server because it loads
 node --test tests/*.test.mjs
 ```
 
-39 tests: prediction maths, provider adapters, data integrity (logos, fixtures, event files) and the backend with a mocked provider.
+43 tests: prediction maths, provider adapters, data integrity (logos, fixtures, event files) and the backend with a mocked provider.
 
 ## Refresh the data
 
@@ -139,4 +139,6 @@ node scripts/train_xg.mjs                                       # teaching xG mo
 * Club-season possession, passing, shots and xG need a licensed event feed and are shown as not available.
 * Open event data has no player tracking: tactical views use on-ball events only.
 * The league snapshot is as fresh as the open archive it was built from. Rebuild it or connect the backend for current data.
+* In LIVE mode the current season's tables, fixtures and club pages run on the provider's results, but forecast ratings are still the ones trained offline by `scripts/train_models.mjs`; every forecast states the date its ratings run to.
+* football-data.org's free plan has no goalscorers, cards, line-ups or match statistics, so those parts of a live match page read *Not available*.
 * VAR decisions and post-shot xG are not in StatsBomb Open Data.

@@ -41,6 +41,7 @@ Local development: copy `.dev.vars.example` to `.dev.vars`, add keys, run `npx w
 | `GET /v1/health` | Which providers are configured, refresh cadence |
 | `GET /v1/matches?date=YYYY-MM-DD[&competition=eng.1]` | Normalised matches for a day |
 | `GET /v1/match/fd:<id>` or `/v1/match/af:<id>` | One match with events, line-ups and statistics where the plan provides them |
+| `GET /v1/season?competition=eng.1` | The whole current season of one of the five leagues, in the shape of `data/leagues/<id>/<season>.json` (football-data.org) |
 | `GET /v1/standings?competition=ucl` | Normalised table |
 | `GET /v1/scorers?competition=eng.1` | Top scorers |
 | `GET /v1/club/arsenal` | Coach and squad |
@@ -51,10 +52,12 @@ Every response carries `provider`, `fetchedAt` (the last successful upstream ref
 
 ## How it protects the provider and the site
 
-* **Cache**: live matches 30 seconds, match detail 60 seconds, standings 10 minutes, scorers 30 minutes, squads 24 hours.
-* **Upstream budget**: at most nine upstream requests a minute per provider, inside football-data.org's free limit.
+* **Cache**: live matches 30 seconds, match detail 60 seconds, league seasons 5 minutes, standings 10 minutes, scorers 30 minutes, squads 24 hours. A league season is a large, sometimes slow request, so an expired copy is answered at once and refreshed in the background; `fetchedAt` always says how old the data is.
+* **Upstream budget**: at most nine upstream requests a minute per provider, inside football-data.org's free limit. Raise it on a paid plan with the `UPSTREAM_PER_MINUTE` variable in `wrangler.toml`.
 * **Visitor rate limit**: a token bucket per IP address.
-* **Retries**: up to three attempts with exponential back-off on 429 and 5xx, honouring `Retry-After`.
+* **Retries**: up to three attempts with exponential back-off on 429 and 5xx, honouring `Retry-After`. Other 4xx answers are not retried; the provider's own message is passed on (for example "Your API token is invalid").
+* **Key problems**: when a provider rejects the key, `npx wrangler tail` shows the stored key's length and character type, never its value. A football-data.org token is 32 characters.
+* **Season integrity**: a season is served only if every club resolves to a canonical id, belongs to that league and the club count matches the registry.
 * **Validation**: adapters drop malformed rows and reject payloads in an unexpected shape with a 502 instead of passing them on.
 * **Canonical clubs**: provider team names resolve to GOALVISION club ids through the registry aliases; an unknown name resolves to `null`, never to a guess.
 

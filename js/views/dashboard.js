@@ -6,6 +6,7 @@ import { crest, flag, formDots, note, tabs, probBar, teamLink } from '../compone
 import { table, clubFixtures, played } from '../models/standings.js';
 import { predictMatch } from '../models/predict.js';
 import { backendUrl, backendHealth } from '../services/live.js';
+import { CONFIG } from '../core/config.js';
 import { applyTheme } from '../components/chrome.js';
 
 export const title = 'My Dashboard';
@@ -56,7 +57,7 @@ export async function render(el, _p, q) {
   const data = () => {
     $('#dc', el).innerHTML = html`<div class="grid g2"><div class="panel"><div class="panel-head"><h3>Live data backend</h3><span class="chip demo" id="st">Checking…</span></div>
           <p class="muted small" style="margin-bottom:14px">GOALVISION AI is a static site, so it cannot hold a sports-data API key safely. Live scores, line-ups, squads and the current Champions League come through a small worker you deploy yourself. Paste its URL here to switch this browser from DEMO to LIVE.</p>
-          <form id="bf" class="stack"><label class="field">Backend URL<input class="input" id="burl" type="url" placeholder="https://goalvision-api.example.workers.dev" value="${esc(getPrefs().backend || '')}"></label><div class="row"><button class="btn primary sm" type="submit">Save and test</button><button class="btn sm" type="button" id="bclear">Use DEMO mode</button></div></form><p class="src" id="bmsg" style="margin-top:12px" aria-live="polite"></p></div>
+          <form id="bf" class="stack"><label class="field">Backend URL<input class="input" id="burl" type="url" placeholder="https://goalvision-api.example.workers.dev" value="${esc(getPrefs().backend === 'off' ? '' : getPrefs().backend || '')}"></label><div class="row"><button class="btn primary sm" type="submit">Save and test</button><button class="btn sm" type="button" id="bclear">Use DEMO mode</button></div></form><p class="src" id="bmsg" style="margin-top:12px" aria-live="polite"></p></div>
         <div class="panel"><div class="panel-head"><h3>What each mode shows</h3></div><div class="table-wrap"><table class="t"><thead><tr><th>Feature</th><th>DEMO (snapshot)</th><th>LIVE (backend)</th></tr></thead><tbody>
           <tr><td>League tables, fixtures</td><td>Results to ${fmt.date(seasons[0].lastResult)}</td><td>Current</td></tr><tr><td>Live scores and clocks</td><td><span class="na">Not available</span></td><td>Provider refresh cadence</td></tr><tr><td>Line-ups, events, match stats</td><td>147 replay matches</td><td>Per provider plan</td></tr><tr><td>Squads, managers, top scorers</td><td><span class="na">Not available</span></td><td>Yes</td></tr><tr><td>Champions League 2026/27</td><td>2025/26 season</td><td>Yes</td></tr><tr><td>Forecasts, tactics, learning</td><td>Yes</td><td>Yes</td></tr></tbody></table></div></div></div>
       <div class="panel" style="margin-top:18px"><div class="panel-head"><h3>Deploy the backend in five minutes</h3></div><pre>cd backend/worker
@@ -64,10 +65,10 @@ npm install
 npx wrangler secret put FOOTBALL_DATA_KEY     # free key from football-data.org (12 competitions)
 npx wrangler secret put API_FOOTBALL_KEY      # optional: API-Football, for line-ups, events and statistics
 npx wrangler deploy                            # prints the URL to paste above</pre><p class="src" style="margin-top:10px">The worker caches every upstream response, rate-limits visitors, retries with back-off and validates the provider's JSON before it reaches the site. Full notes: <code>backend/worker/README.md</code>.</p></div>`;
-    const check = async () => { const st = $('#st', el), msg = $('#bmsg', el); if (!backendUrl()) { st.className = 'chip demo'; st.textContent = 'DEMO'; msg.textContent = 'No backend set: the site is using the dated snapshot.'; return; }
+    const check = async () => { const st = $('#st', el), msg = $('#bmsg', el); if (!backendUrl()) { st.className = 'chip demo'; st.textContent = 'DEMO'; msg.textContent = getPrefs().backend === 'off' ? 'DEMO mode chosen for this browser: the site is using the dated snapshot. Save an empty field to return to the site\'s own backend.' : 'No backend set: the site is using the dated snapshot.'; return; }
       st.textContent = 'Testing…'; const h = await backendHealth(true); if (!el.isConnected) return; if (h.ok) { st.className = 'chip live'; st.textContent = 'LIVE'; msg.textContent = `Connected to ${h.provider}. Refresh every ${h.refreshSeconds || 60} seconds while matches are in play.`; } else if (h.noKey) { st.className = 'chip demo'; st.textContent = 'No API key'; msg.textContent = 'The backend answered, but it has no provider API key yet. Add one in backend/worker with "npx wrangler secret put FOOTBALL_DATA_KEY". The site stays in DEMO mode until then.'; } else { st.className = 'chip red'; st.textContent = 'Offline'; msg.textContent = `Could not reach the backend: ${h.error}. The site stays in DEMO mode.`; } };
     $('#bf', el).addEventListener('submit', (e) => { e.preventDefault(); const v = $('#burl', el).value.trim(); if (v && !/^https?:\/\//.test(v)) { $('#bmsg', el).textContent = 'Enter a full URL starting with https://'; return; } setPref('backend', v); check(); });
-    $('#bclear', el).addEventListener('click', () => { $('#burl', el).value = ''; setPref('backend', ''); check(); }); check();
+    $('#bclear', el).addEventListener('click', () => { $('#burl', el).value = ''; setPref('backend', CONFIG.backend ? 'off' : ''); check(); }); check();
   };
   const drawn = new Set();
   const show = tabs(el, (n) => { setQuery({ tab: n === 'overview' ? null : n }); if (n === 'overview') return overview(); if (drawn.has(n)) return; drawn.add(n); ({ prefs, data })[n](); });

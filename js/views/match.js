@@ -113,8 +113,8 @@ async function renderSB(el, id) {
 /* ───────────────── league fixture from the snapshot ───────────────── */
 async function renderLeague(el, lid, sKey, i) {
   const [s, state] = await Promise.all([loadSeason(lid, sKey), modelState()]), m = s.matches[i];
-  if (!m) throw new Error('That fixture is not in the snapshot');
-  const h = s.teams[m[3]], a = s.teams[m[4]], H = club(h), A = club(a), st = fixtureStatus(m), lg = league(lid), done = st.code === 'FT';
+  if (!m) throw new Error('That fixture is not in the season data');
+  const h = s.teams[m[3]], a = s.teams[m[4]], H = club(h), A = club(a), st = fixtureStatus(m, undefined, s.live), lg = league(lid), done = st.code === 'FT';
   document.title = `${H.short} v ${A.short} · GOALVISION AI`;
   const before = (id) => clubMatches(s, id).filter((x) => x.date < m[1]).slice(-5), h2h = state.h2h[pairKey(h, a)];
   const canForecast = !done && state.clubs[h] && state.clubs[a], f = canForecast ? predictMatch(state, { home: h, away: a, date: m[1] }) : null;
@@ -136,7 +136,7 @@ async function renderLeague(el, lid, sKey, i) {
         <h4 style="margin:18px 0 8px">Head-to-head since 2010</h4>${h2h ? (() => { const first = h < a ? h : a, hw = first === h ? h2h.w[0] : h2h.w[2], aw = first === h ? h2h.w[2] : h2h.w[0];
           return `<div class="h2h"><div><b class="num">${hw}</b><span>${esc(H.short)} wins</span></div><div><b class="num">${h2h.w[1]}</b><span>Draws</span></div><div><b class="num">${aw}</b><span>${esc(A.short)} wins</span></div></div><ul class="mini" style="margin-top:10px">${[...h2h.last].reverse().slice(0, 5).map(([d, hm, hg, ag]) => `<li><span class="dim small num">${fmt.date(d, { month: 'short', year: 'numeric' })}</span><span class="team"><span>${esc(club(hm).short)} v ${esc(club(hm === h ? a : h).short)}</span></span><b class="num">${hg}–${ag}</b></li>`).join('')}</ul>`; })() : '<p class="dim small">No league meeting in the data.</p>'}</div></div>
     <div style="margin-top:16px">${note(`Line-ups, the event timeline and match statistics are not part of the open results archive for league fixtures. With the live backend connected this page loads them from the provider. For matches with full event data, open a <a class="link" href="#/live">replay</a>.`)}</div>
-    ${source(s.source, s.fetchedAt, s.sourceUrl)}</div>`;
+    ${source(s.source, s.fetchedAt, s.sourceUrl, { live: s.live })}</div>`;
 }
 
 /* ───────────────── live match from the backend ───────────────── */

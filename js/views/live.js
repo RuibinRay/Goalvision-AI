@@ -43,8 +43,11 @@ export async function render(el, _p, q) {
     clearTimeout(timer);
     try {
       const res = await liveMatches(date, comp === 'all' ? '' : comp); if (!el.isConnected) return;
-      const by = {}; res.matches.forEach((m) => (by[m.competitionName || m.competition] ||= []).push(m));
-      board.innerHTML = Object.keys(by).length ? Object.entries(by).map(([name, ms]) => `<div class="panel flush" style="margin-bottom:14px"><div class="panel-head" style="padding:14px 16px 0"><h3>${esc(name)}</h3></div><div class="fx-list">${ms.map((m) => {
+      // The site's own competitions first, under their own names and in registry order; anything else the provider lists follows.
+      const known = [...registry().leagues, ...registry().competitions], order = known.map((c) => c.id), names = Object.fromEntries(known.map((c) => [c.id, c.name]));
+      const rank = (ms) => { const i = order.indexOf(ms[0].competition); return i < 0 ? order.length : i; };
+      const by = {}; res.matches.forEach((m) => (by[names[m.competition] || m.competitionName || m.competition] ||= []).push(m));
+      board.innerHTML = Object.keys(by).length ? Object.entries(by).sort((a, b) => rank(a[1]) - rank(b[1])).map(([name, ms]) => `<div class="panel flush" style="margin-bottom:14px"><div class="panel-head" style="padding:14px 16px 0"><h3>${esc(name)}</h3></div><div class="fx-list">${ms.map((m) => {
         const inplay = isInPlay(m.status), mid = m.status === 'SCHEDULED' ? `<span class="ko num">${new Date(m.utcDate).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span><span class="when">Kick-off</span>` : `<span class="score num">${m.score.home ?? '–'}–${m.score.away ?? '–'}</span><span class="when ${inplay ? 'accent' : ''}">${inplay && m.minute ? m.minute + "'" : STATUS_LABEL[m.status] || m.status}</span>`;
         const reds = (side) => (m.cards || []).filter((c) => c.side === side && c.kind !== 'yellow').length;
         return `<a class="fx" href="#/match/live~${encodeURIComponent(m.id)}"><span class="team">${m.home.club ? crest(m.home.club, 24) : ''}<span>${esc(m.home.name)}</span>${reds('home') ? `<i class="redcard" title="Red cards">${reds('home')}</i>` : ''}</span><span class="mid">${mid}</span><span class="team">${m.away.club ? crest(m.away.club, 24) : ''}<span>${esc(m.away.name)}</span>${reds('away') ? `<i class="redcard">${reds('away')}</i>` : ''}</span></a>${(m.goals || []).length ? `<div class="fx-goals">${m.goals.map((g) => `${esc(g.player || 'Goal')} ${g.minute}'`).join(' · ')}</div>` : ''}`; }).join('')}</div></div>`).join('') : `<div class="empty"><h4>No matches on ${fmt.day(date)}</h4>The provider lists nothing for this date and filter.</div>`;
