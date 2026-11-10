@@ -8,7 +8,8 @@ import './components/ui.js';
 const prefs = getPrefs();
 applyTheme(prefs.theme === 'light' ? 'light' : 'dark');
 const osReduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const applyMotion = () => document.body.classList.toggle('reduced-motion', getPrefs().motion === 'reduced' || (getPrefs().motion === 'auto' && osReduced));
+// Animations play by default. They stop when the visitor chooses "Reduced motion", or chooses to follow a device that asks for it.
+const applyMotion = () => document.body.classList.toggle('reduced-motion', getPrefs().motion === 'reduced' || (getPrefs().motion === 'system' && osReduced));
 applyMotion();
 export const motionReduced = () => document.body.classList.contains('reduced-motion');
 document.addEventListener('prefs', (e) => { if (e.detail.key === 'motion') { applyMotion(); rerender(); } });

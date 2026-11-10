@@ -111,6 +111,10 @@
 .cine.lite .cine-player img { animation: cine-rise 1.2s var(--ease-out) .5s both; } .cine.lite .cine-player.b img { animation-delay: .62s; }
 .cine.lite .cine-switch { animation: cine-rise .8s var(--ease-out) 1.1s both; }
 @keyframes cine-rise { from { opacity: 0; transform: translateY(40px); } }
+/* the quiet opt-out shown, while animations play, to a visitor whose device asks for reduced motion */
+.cine-calm { position: absolute; top: calc(var(--nav-h) + 10px); right: var(--gutter); z-index: 7; padding: 7px 13px; border-radius: 999px; border: 1px solid var(--line-2); background: rgba(8, 13, 21, .74); color: var(--text-2); font: 600 12.5px/1 var(--font-b); cursor: pointer; }
+.cine-calm:hover, .cine-calm:focus-visible { color: #fff; border-color: rgba(247, 250, 255, .4); }
+.cine.static .cine-stage > .cine-calm { position: absolute; grid-column: auto; }
 /* the note shown when animations are off because the device asks for reduced motion */
 .cine-motion { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 12px; width: fit-content; max-width: 100%; margin: 18px auto 0; padding: 8px 10px 8px 16px; border-radius: 18px; background: rgba(8, 13, 21, .78); border: 1px solid var(--line-2); font-size: 13.5px; font-weight: 600; color: var(--text-2); text-align: left; }
 

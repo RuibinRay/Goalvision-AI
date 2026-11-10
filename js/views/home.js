@@ -3,7 +3,8 @@
  * snapshot or the backend. Three levels of motion, chosen in cinematic():
  *   full   wide windows: the pinned, scroll-driven sequence (GSAP ScrollTrigger)
  *   lite   small windows, or no scroll library: the static layout with entrances and a slowly drifting 3D backdrop
- *   still  reduced motion (the visitor's choice, or the system setting): static, with a button to turn animations on
+ *   still  reduced motion (the visitor's choice in My Dashboard, or the device setting if they chose to follow it): static
+ * Animations play by default. A visitor whose device asks for reduced motion sees a "Reduce motion" button on the hero.
  */
 import { $, $$, esc, html, fmt, todayISO, ICON, seg, segmented, options, observeReveals } from '../core/dom.js';
 import { playersArt, modelState, currentSeasons, worldCup, sbPlayers, sbMatch, leagues, league, clubsOf, club, asset, SEASON, registry, playerArt, getPrefs, setPref } from '../core/store.js';
@@ -146,7 +147,7 @@ async function cinematic(el, nextMatchup, stopRotate, libs) {
   // still and lite use the static layout, which is known now: show it at once instead of waiting for the 3D scene.
   const still = () => {                                    // reduced motion: nothing travels; the floodlights fade up once
     cine.classList.add('static');
-    if (getPrefs().motion === 'auto' && !$('.cine-motion', el)) {   // the system asked for this, not the visitor: say so and offer the switch
+    if (getPrefs().motion === 'system' && !$('.cine-motion', el)) {   // the device asked for this (the visitor chose to follow it): say so and offer the switch
       $('.cine-cta', el).insertAdjacentHTML('afterend', '<p class="cine-motion"><span>Animations are off because this device is set to reduce motion.</span><button class="btn sm" type="button" id="motion-on">Turn animations on</button></p>');
       $('#motion-on', el).addEventListener('click', () => setPref('motion', 'full'));
     }
@@ -159,6 +160,11 @@ async function cinematic(el, nextMatchup, stopRotate, libs) {
     observeReveals(cine);
   };
   if (reduced) still(); else if (!full) lite();
+  // Animations play by default, even on a device that asks for less. Such a visitor gets a one-press way to stop them.
+  if (!reduced && matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    stage.insertAdjacentHTML('beforeend', '<button class="cine-calm" type="button" id="motion-off" title="Your device asks for reduced motion. This switches the site to its static version.">Reduce motion</button>');
+    $('#motion-off', el).addEventListener('click', () => setPref('motion', 'reduced'));
+  }
 
   let stadium = null;
   try { const mod = await import('../scenes/stadium.js'); stadium = mod.createStadium(canvas, { reduced }); } catch (e) { console.warn('WebGL stadium unavailable, using the static backdrop', e); canvas.remove(); stage.classList.add('no-gl'); }

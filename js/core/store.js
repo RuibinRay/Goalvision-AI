@@ -48,10 +48,14 @@ export const playersArt = () => getJSON('data/players_art.json');
 
 /* ── preferences (local only) ── */
 const KEY = 'gv.prefs.v1';
-const DEFAULTS = { clubs: [], players: [], leagues: [], watch: [], saved: [], theme: 'dark', motion: 'auto', backend: '' };
+// motion: 'full' (the default: animations play), 'system' (follow the device's reduce-motion setting) or 'reduced'.
+const DEFAULTS = { clubs: [], players: [], leagues: [], watch: [], saved: [], theme: 'dark', motion: 'full', backend: '' };
 let prefs = null;
 export function getPrefs() {
-  if (!prefs) { try { prefs = { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch { prefs = { ...DEFAULTS }; } }
+  if (!prefs) {
+    try { prefs = { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch { prefs = { ...DEFAULTS }; }
+    if (!['full', 'system', 'reduced'].includes(prefs.motion)) prefs.motion = 'full';   // includes 'auto', the old default that was saved alongside any other preference
+  }
   return prefs;
 }
 export function setPref(k, v) { getPrefs()[k] = v; try { localStorage.setItem(KEY, JSON.stringify(prefs)); } catch { /* private mode: keep in memory */ } document.dispatchEvent(new CustomEvent('prefs', { detail: { key: k } })); }
