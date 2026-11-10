@@ -114,7 +114,7 @@ python3 -m http.server 8777
 Then open http://localhost:8777. The site needs a static server because it loads JSON and ES modules.
 
 ```bash
-node --test tests/
+node --test tests/*.test.mjs
 ```
 
 39 tests: prediction maths, provider adapters, data integrity (logos, fixtures, event files) and the backend with a mocked provider.

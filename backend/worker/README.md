@@ -58,7 +58,7 @@ Every response carries `provider`, `fetchedAt` (the last successful upstream ref
 * **Validation**: adapters drop malformed rows and reject payloads in an unexpected shape with a 502 instead of passing them on.
 * **Canonical clubs**: provider team names resolve to GOALVISION club ids through the registry aliases; an unknown name resolves to `null`, never to a guess.
 
-The adapters are plain functions in `js/services/adapters.js`, shared with the test suite (`node --test tests/`).
+The adapters are plain functions in `js/services/adapters.js`, shared with the test suite (`node --test tests/*.test.mjs`).
 
 ## Other hosts
 
