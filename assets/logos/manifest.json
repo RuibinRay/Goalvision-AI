@@ -1,0 +1,386 @@
+{
+"eng.1/bournemouth": {
+"w": 209,
+"h": 265
+},
+"eng.1/arsenal": {
+"w": 228,
+"h": 263
+},
+"eng.1/aston-villa": {
+"w": 203,
+"h": 275
+},
+"eng.1/brentford": {
+"w": 263,
+"h": 263
+},
+"eng.1/brighton": {
+"w": 267,
+"h": 267
+},
+"eng.1/chelsea": {
+"w": 266,
+"h": 261
+},
+"eng.1/coventry": {
+"w": 224,
+"h": 260
+},
+"eng.1/crystal-palace": {
+"w": 240,
+"h": 258
+},
+"eng.1/everton": {
+"w": 260,
+"h": 256
+},
+"eng.1/fulham": {
+"w": 207,
+"h": 265
+},
+"eng.1/hull": {
+"w": 229,
+"h": 275
+},
+"eng.1/ipswich": {
+"w": 219,
+"h": 262
+},
+"eng.1/leeds": {
+"w": 229,
+"h": 265
+},
+"eng.1/liverpool": {
+"w": 165,
+"h": 271
+},
+"eng.1/man-city": {
+"w": 265,
+"h": 266
+},
+"eng.1/man-united": {
+"w": 253,
+"h": 256
+},
+"eng.1/newcastle": {
+"w": 272,
+"h": 259
+},
+"eng.1/nottingham-forest": {
+"w": 145,
+"h": 270
+},
+"eng.1/sunderland": {
+"w": 297,
+"h": 253
+},
+"eng.1/tottenham": {
+"w": 126,
+"h": 261
+},
+"esp.1/athletic": {
+"w": 228,
+"h": 253
+},
+"esp.1/atletico": {
+"w": 193,
+"h": 244
+},
+"esp.1/osasuna": {
+"w": 213,
+"h": 265
+},
+"esp.1/celta": {
+"w": 187,
+"h": 272
+},
+"esp.1/alaves": {
+"w": 253,
+"h": 249
+},
+"esp.1/elche": {
+"w": 196,
+"h": 246
+},
+"esp.1/barcelona": {
+"w": 242,
+"h": 249
+},
+"esp.1/getafe": {
+"w": 239,
+"h": 250
+},
+"esp.1/levante": {
+"w": 219,
+"h": 250
+},
+"esp.1/malaga": {
+"w": 227,
+"h": 247
+},
+"esp.1/racing": {
+"w": 203,
+"h": 271
+},
+"esp.1/rayo": {
+"w": 248,
+"h": 235
+},
+"esp.1/deportivo": {
+"w": 224,
+"h": 267
+},
+"esp.1/espanyol": {
+"w": 197,
+"h": 273
+},
+"esp.1/betis": {
+"w": 274,
+"h": 250
+},
+"esp.1/real-madrid": {
+"w": 199,
+"h": 269
+},
+"esp.1/real-sociedad": {
+"w": 211,
+"h": 248
+},
+"esp.1/sevilla": {
+"w": 219,
+"h": 256
+},
+"esp.1/valencia": {
+"w": 202,
+"h": 258
+},
+"esp.1/villarreal": {
+"w": 219,
+"h": 262
+},
+"ita.1/milan": {
+"w": 184,
+"h": 273
+},
+"ita.1/monza": {
+"w": 183,
+"h": 268
+},
+"ita.1/roma": {
+"w": 203,
+"h": 261
+},
+"ita.1/atalanta": {
+"w": 180,
+"h": 269
+},
+"ita.1/bologna": {
+"w": 186,
+"h": 268
+},
+"ita.1/cagliari": {
+"w": 220,
+"h": 253
+},
+"ita.1/como": {
+"w": 237,
+"h": 244
+},
+"ita.1/fiorentina": {
+"w": 241,
+"h": 241
+},
+"ita.1/frosinone": {
+"w": 227,
+"h": 244
+},
+"ita.1/genoa": {
+"w": 197,
+"h": 248
+},
+"ita.1/inter": {
+"w": 242,
+"h": 246
+},
+"ita.1/juventus": {
+"w": 158,
+"h": 244
+},
+"ita.1/lazio": {
+"w": 306,
+"h": 234
+},
+"ita.1/lecce": {
+"w": 211,
+"h": 254
+},
+"ita.1/napoli": {
+"w": 245,
+"h": 248
+},
+"ita.1/parma": {
+"w": 203,
+"h": 236
+},
+"ita.1/sassuolo": {
+"w": 231,
+"h": 248
+},
+"ita.1/torino": {
+"w": 212,
+"h": 246
+},
+"ita.1/udinese": {
+"w": 258,
+"h": 243
+},
+"ita.1/venezia": {
+"w": 244,
+"h": 213
+},
+"ger.1/bayern": {
+"w": 235,
+"h": 236
+},
+"ger.1/dortmund": {
+"w": 220,
+"h": 221
+},
+"ger.1/leipzig": {
+"w": 251,
+"h": 176
+},
+"ger.1/stuttgart": {
+"w": 209,
+"h": 233
+},
+"ger.1/hoffenheim": {
+"w": 212,
+"h": 236
+},
+"ger.1/leverkusen": {
+"w": 243,
+"h": 200
+},
+"ger.1/freiburg": {
+"w": 182,
+"h": 266
+},
+"ger.1/frankfurt": {
+"w": 241,
+"h": 241
+},
+"ger.1/augsburg": {
+"w": 195,
+"h": 246
+},
+"ger.1/mainz": {
+"w": 224,
+"h": 219
+},
+"ger.1/union-berlin": {
+"w": 264,
+"h": 104
+},
+"ger.1/gladbach": {
+"w": 184,
+"h": 281
+},
+"ger.1/hamburg": {
+"w": 224,
+"h": 185
+},
+"ger.1/koln": {
+"w": 236,
+"h": 276
+},
+"ger.1/bremen": {
+"w": 187,
+"h": 280
+},
+"ger.1/schalke": {
+"w": 239,
+"h": 242
+},
+"ger.1/elversberg": {
+"w": 229,
+"h": 240
+},
+"ger.1/paderborn": {
+"w": 250,
+"h": 212
+},
+"fra.1/auxerre": {
+"w": 207,
+"h": 256
+},
+"fra.1/angers": {
+"w": 223,
+"h": 260
+},
+"fra.1/monaco": {
+"w": 187,
+"h": 306
+},
+"fra.1/lorient": {
+"w": 192,
+"h": 266
+},
+"fra.1/le-havre": {
+"w": 214,
+"h": 265
+},
+"fra.1/le-mans": {
+"w": 225,
+"h": 255
+},
+"fra.1/lille": {
+"w": 235,
+"h": 235
+},
+"fra.1/nice": {
+"w": 215,
+"h": 272
+},
+"fra.1/marseille": {
+"w": 207,
+"h": 268
+},
+"fra.1/lyon": {
+"w": 211,
+"h": 249
+},
+"fra.1/paris-fc": {
+"w": 210,
+"h": 247
+},
+"fra.1/psg": {
+"w": 244,
+"h": 243
+},
+"fra.1/lens": {
+"w": 201,
+"h": 266
+},
+"fra.1/strasbourg": {
+"w": 245,
+"h": 247
+},
+"fra.1/brest": {
+"w": 214,
+"h": 257
+},
+"fra.1/rennes": {
+"w": 214,
+"h": 252
+},
+"fra.1/toulouse": {
+"w": 242,
+"h": 240
+},
+"fra.1/troyes": {
+"w": 228,
+"h": 268
+}
+}

@@ -1,0 +1,8 @@
+node_modules/
+.DS_Store
+.dev.vars
+.wrangler/
+backend/ml/rows.csv
+__pycache__/
+*.pyc
+.taste-skill/

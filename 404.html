@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>GOALVISION AI</title><meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+  // GitHub Pages serves this file for any unknown path. The app uses hash routes, so send path-style links
+  // (/league/eng.1) to their hash form (#/league/eng.1) under the project base, keeping query strings.
+  var seg = location.pathname.split('/').filter(Boolean), base = location.hostname.endsWith('github.io') && seg.length ? '/' + seg.shift() + '/' : '/';
+  location.replace(base + '#/' + seg.join('/') + location.search);
+</script></head><body style="background:#080C13;color:#F7FAFF;font:16px system-ui;padding:40px">Redirecting to <a style="color:#BEFF37" href="./">GOALVISION AI</a>…</body></html>

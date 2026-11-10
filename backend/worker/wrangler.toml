@@ -1,0 +1,14 @@
+name = "goalvision-api"
+main = "src/index.js"
+compatibility_date = "2026-01-01"
+
+[vars]
+# Comma-separated origins allowed to call the API. "*" allows any site.
+# The GitHub Pages site (an origin has no path) and the local preview server.
+ALLOWED_ORIGINS = "https://ruibinray.github.io,http://localhost:8777"
+# Season start year used for API-Football requests.
+SEASON = "2026"
+
+# Secrets are NOT stored here. Set them once with:
+#   npx wrangler secret put FOOTBALL_DATA_KEY
+#   npx wrangler secret put API_FOOTBALL_KEY

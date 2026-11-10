@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>GOALVISION AI — Beyond the Final Whistle</title>
+  <meta name="description" content="GOALVISION AI: an interactive global football intelligence platform. Leagues and clubs, a live match centre, tactical analysis from real event data, player analytics and transparent, backtested match forecasts. Independent educational project." />
+  <meta name="theme-color" content="#080C13" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="GOALVISION AI — Beyond the Final Whistle" />
+  <meta property="og:description" content="Every match has a story. Every statistic reveals another chapter. Football analytics, tactics and transparent forecasting." />
+  <link rel="icon" href="assets/img/brand/favicon.svg" type="image/svg+xml" />
+  <link rel="manifest" href="assets/manifest.webmanifest" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/home.css" />
+  <link rel="stylesheet" href="css/views.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/index.js",
+      "gsap/ScrollTrigger": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/ScrollTrigger.js",
+      "echarts": "https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.esm.min.js"
+    }
+  }
+  </script>
+</head>
+<body data-route="home">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="bg-stadium" aria-hidden="true"></div>
+  <header id="nav" class="nav"></header>
+  <main id="main" class="main" tabindex="-1"></main>
+  <footer id="footer" class="footer"></footer>
+  <div id="hovercard" class="hovercard" role="tooltip" hidden></div>
+  <div id="palette" class="palette" hidden></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <noscript><p class="noscript">GOALVISION AI needs JavaScript for its interactive dashboards. The data snapshots and source are in the repository.</p></noscript>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

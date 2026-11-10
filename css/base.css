@@ -1,0 +1,98 @@
+/* GOALVISION AI — "Floodlit" design tokens and base styles.
+   Night-stadium surfaces, electric blue for data and interaction, neon green for the live/primary accent,
+   pitch green as a field colour, gold only for trophies. Club colours are used as lighting, never as data. */
+:root {
+  --bg: #080C13; --bg-2: #111A25; --bg-3: #172231; --bg-4: #1F2D3F;
+  --line: rgba(247, 250, 255, .08); --line-2: rgba(247, 250, 255, .15); --line-3: rgba(247, 250, 255, .28);
+  --text: #F7FAFF; --text-2: #B7C2D1; --text-3: #8492A6;
+  --blue: #168FFF; --blue-2: #5FB2FF; --blue-rgb: 22, 143, 255;
+  --green: #BEFF37; --green-ink: #BEFF37; --green-rgb: 190, 255, 55;
+  --pitch: #124A32; --pitch-2: #0C3725; --pitch-rgb: 18, 74, 50;
+  --gold: #E9C15B; --gold-rgb: 233, 193, 91;
+  --red: #FF5468; --red-rgb: 255, 84, 104; --amber: #FFC53D; --pos: #BEFF37; --neg: #FF5468;
+  --on-accent: #0A1206;
+  --team-a: #168FFF; --team-b: #BEFF37;
+  --glass: rgba(17, 26, 37, .68); --glass-2: rgba(23, 34, 49, .86); --scrim: rgba(8, 12, 19, .82);
+  --chart-1: #168FFF; --chart-2: #BEFF37; --chart-3: #E9C15B; --chart-4: #FF5468; --chart-5: #9A8CFF; --chart-6: #42E0C8; --chart-7: #F7FAFF;
+  --font-d: 'Archivo', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  --font-b: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --gutter: clamp(16px, 4vw, 56px); --maxw: 1480px; --nav-h: 64px;
+  --r-sm: 8px; --r: 14px; --r-lg: 22px;
+  --shadow: 0 18px 50px rgba(0, 0, 0, .5);
+  --ease: cubic-bezier(.2, .8, .2, 1); --ease-out: cubic-bezier(.16, 1, .3, 1); --dur: .22s;
+  color-scheme: dark;
+}
+[data-theme="light"] {
+  --bg: #EDF1F6; --bg-2: #FFFFFF; --bg-3: #F3F6FA; --bg-4: #E3E9F1;
+  --line: rgba(8, 12, 19, .10); --line-2: rgba(8, 12, 19, .18); --line-3: rgba(8, 12, 19, .32);
+  --text: #0A111C; --text-2: #364559; --text-3: #5B6B80;
+  --blue: #0A6BD0; --blue-2: #0A57AB; --green-ink: #3A6E00; --pos: #2F7D12; --neg: #C9243A; --red: #D42B43; --gold: #8A6A12; --amber: #B37A00;
+  --glass: rgba(255, 255, 255, .82); --glass-2: rgba(255, 255, 255, .94); --scrim: rgba(237, 241, 246, .88);
+  --chart-1: #0A6BD0; --chart-2: #4E9A00; --chart-3: #B8860B; --chart-4: #D42B43; --chart-5: #6B5BD6; --chart-6: #0E9C88; --chart-7: #0A111C;
+  --shadow: 0 14px 40px rgba(20, 40, 70, .16);
+  color-scheme: light;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: calc(var(--nav-h) + 16px); }
+body { margin: 0; background: var(--bg); color: var(--text); font: 400 16px/1.55 var(--font-b); -webkit-font-smoothing: antialiased; overflow-x: hidden; min-height: 100vh; display: flex; flex-direction: column; }
+img, svg, canvas, video { display: block; max-width: 100%; }
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: inherit; text-decoration: none; }
+h1, h2, h3, h4 { margin: 0; font-family: var(--font-d); font-stretch: 112%; font-weight: 800; line-height: 1.02; letter-spacing: -.02em; text-wrap: balance; }
+h1 { font-size: clamp(34px, 5.2vw, 76px); text-transform: uppercase; }
+h2 { font-size: clamp(26px, 3.1vw, 44px); text-transform: uppercase; }
+h3 { font-size: clamp(18px, 1.5vw, 22px); font-stretch: 105%; font-weight: 700; letter-spacing: -.01em; line-height: 1.15; }
+h4 { font-size: 15px; font-stretch: 100%; font-weight: 700; letter-spacing: 0; line-height: 1.25; }
+p { margin: 0 0 1em; } p:last-child { margin-bottom: 0; }
+.num, td.n, th.n { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum'; }
+.lead { font-size: clamp(16px, 1.25vw, 19px); color: var(--text-2); max-width: 62ch; }
+.muted { color: var(--text-2); } .dim { color: var(--text-3); } .small { font-size: 13.5px; }
+.pos { color: var(--pos); } .neg { color: var(--neg); } .gold { color: var(--gold); } .accent { color: var(--green-ink); } .link { color: var(--blue-2); text-decoration: underline; text-underline-offset: 3px; }
+[data-theme="light"] .link { color: var(--blue); }
+:focus-visible { outline: 2px solid var(--green-ink); outline-offset: 2px; border-radius: 4px; }
+::selection { background: rgba(var(--blue-rgb), .45); color: #fff; }
+.skip-link { position: fixed; left: 12px; top: -60px; z-index: 300; background: var(--green); color: var(--on-accent); padding: 10px 14px; border-radius: var(--r-sm); font-weight: 700; }
+.skip-link:focus { top: 12px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* fixed night-stadium backdrop: two floodlight glows and faint pitch markings */
+.bg-stadium { position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(900px 520px at 12% -8%, rgba(var(--blue-rgb), .16), transparent 62%),
+    radial-gradient(900px 560px at 96% 4%, rgba(var(--green-rgb), .07), transparent 60%),
+    radial-gradient(1200px 700px at 50% 118%, rgba(var(--pitch-rgb), .5), transparent 65%),
+    var(--bg); }
+.bg-stadium::after { content: ''; position: absolute; inset: 0; opacity: .5;
+  background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 120px 120px; mask-image: radial-gradient(ellipse at 50% 0%, #000 0%, transparent 70%); -webkit-mask-image: radial-gradient(ellipse at 50% 0%, #000 0%, transparent 70%); }
+[data-theme="light"] .bg-stadium { background: radial-gradient(900px 520px at 12% -8%, rgba(var(--blue-rgb), .10), transparent 62%), var(--bg); }
+
+.main { flex: 1; padding-top: var(--nav-h); outline: none; }
+.main.no-pad { padding-top: 0; }
+.container { width: 100%; max-width: var(--maxw); margin: 0 auto; padding-inline: var(--gutter); }
+.section { padding-block: clamp(36px, 5vw, 72px); }
+.section + .section { padding-top: 0; }
+.page-head { padding-block: clamp(28px, 4vw, 56px) clamp(18px, 2vw, 28px); display: grid; gap: 14px; }
+.page-head .lead { margin: 0; }
+.section-head { display: flex; align-items: end; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap; margin-bottom: clamp(16px, 2vw, 26px); }
+.section-head p { margin: 8px 0 0; color: var(--text-2); max-width: 70ch; }
+.row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.row.between { justify-content: space-between; } .row.end { justify-content: flex-end; }
+.stack { display: grid; gap: 14px; } .stack.lg { gap: 24px; }
+.grid { display: grid; gap: clamp(12px, 1.4vw, 20px); }
+.g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } .g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.g-auto { grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
+.g-23 { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); } .g-32 { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); } .g-side { grid-template-columns: minmax(0, 1fr) minmax(280px, 380px); }
+.span-2 { grid-column: span 2; } .span-all { grid-column: 1 / -1; }
+@media (max-width: 1080px) { .g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .g3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .g-23, .g-32, .g-side { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 680px) { .g2, .g3, .g4 { grid-template-columns: minmax(0, 1fr); } .span-2 { grid-column: auto; } }
+
+/* motion: content is visible by default; .reveal only adds travel when motion is allowed */
+@media (prefers-reduced-motion: no-preference) {
+  body:not(.reduced-motion) .reveal { opacity: 0; transform: translateY(22px); transition: opacity .7s var(--ease-out), transform .7s var(--ease-out); transition-delay: calc(var(--i, 0) * 70ms); }
+  body:not(.reduced-motion) .reveal.in { opacity: 1; transform: none; }
+  body:not(.reduced-motion) .view { animation: view-in .45s var(--ease-out) both; }
+}
+@keyframes view-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+body.reduced-motion *, body.reduced-motion *::before, body.reduced-motion *::after { animation-duration: .001s !important; animation-iteration-count: 1 !important; transition-duration: .001s !important; scroll-behavior: auto !important; }
+.noscript { padding: 120px var(--gutter); max-width: 60ch; }
