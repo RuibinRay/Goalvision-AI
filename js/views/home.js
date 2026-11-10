@@ -1,12 +1,16 @@
 /**
  * Home: the cinematic showdown (five scroll chapters over the Three.js stadium), then live widgets built from the
- * snapshot or the backend. On phones, with reduced motion or without WebGL the same content is laid out statically.
+ * snapshot or the backend. Three levels of motion, chosen in cinematic():
+ *   full   wide windows: the pinned, scroll-driven sequence (GSAP ScrollTrigger)
+ *   lite   small windows, or no scroll library: the static layout with entrances and a slowly drifting 3D backdrop
+ *   still  reduced motion (the visitor's choice, or the system setting): static, with a button to turn animations on
  */
-import { $, $$, esc, html, fmt, todayISO, ICON, seg, segmented, options } from '../core/dom.js';
-import { playersArt, modelState, currentSeasons, worldCup, sbPlayers, sbMatch, leagues, league, clubsOf, club, asset, SEASON, registry, playerArt } from '../core/store.js';
+import { $, $$, esc, html, fmt, todayISO, ICON, seg, segmented, options, observeReveals } from '../core/dom.js';
+import { playersArt, modelState, currentSeasons, worldCup, sbPlayers, sbMatch, leagues, league, clubsOf, club, asset, SEASON, registry, playerArt, getPrefs, setPref } from '../core/store.js';
 import { crest, flag, teamLink, vsRow, probBar, fixtureRow, formDots, note } from '../components/ui.js';
 import { table, played } from '../models/standings.js';
 import { predictMatch } from '../models/predict.js';
+import { rerender } from '../core/router.js';
 import { isLive, liveMatches, STATUS_LABEL, isInPlay } from '../services/live.js';
 
 export const fullBleed = true;
@@ -26,9 +30,13 @@ const MAP = [
 const fold = (s) => s.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const age = (dob) => (dob ? Math.floor((Date.now() - Date.parse(dob)) / 31557600000) : null);
 
-let scene = null, tl = null, st = null, io = null, rotate = null, onResize = null, gsapRef = null;
+let scene = null, tl = null, st = null, io = null, rotate = null, onResize = null, gsapRef = null, ambientOff = null;
+const wantsFull = () => !document.body.classList.contains('reduced-motion') && innerWidth >= 900 && innerHeight >= 560;
+/** The scroll libraries, or null if they fail or take too long: the page then uses the lite hero instead of waiting. */
+const scrollLibs = () => Promise.race([Promise.all([import('gsap'), import('gsap/ScrollTrigger')]).catch((e) => { console.warn('GSAP unavailable, using the lite hero', e); return null; }), new Promise((r) => setTimeout(() => r(null), 5000))]);
 
 export async function render(el) {
+  const libs = wantsFull() ? scrollLibs() : null;   // start downloading now, alongside the data
   const [art, state, seasons, wc26] = await Promise.all([playersArt(), modelState(), currentSeasons(), worldCup(2026)]);
   const people = Object.fromEntries(art.players.map((p) => [p.name, p]));
   const wcNations = new Set(wc26.matches.flatMap((m) => [m.team1, m.team2]));
@@ -127,28 +135,48 @@ export async function render(el) {
   custom.addEventListener('submit', (ev) => { ev.preventDefault(); const f = new FormData(custom); if (f.get('a') === f.get('b')) return; custom.hidden = true; setMatchup({ a: f.get('a'), b: f.get('b') }); });
 
   widgets(el, state, seasons, wc26);
-  await cinematic(el, () => { current = (current + 1) % MATCHUPS.length; setMatchup(MATCHUPS[current]); }, stopRotate);
+  await cinematic(el, () => { current = (current + 1) % MATCHUPS.length; setMatchup(MATCHUPS[current]); }, stopRotate, libs);
 }
 
 /* ───────── the scroll sequence ───────── */
-async function cinematic(el, nextMatchup, stopRotate) {
+async function cinematic(el, nextMatchup, stopRotate, libs) {
   const cine = $('#cine', el), stage = $('.cine-stage', el), canvas = $('.cine-canvas', el);
-  const reduced = document.body.classList.contains('reduced-motion'), small = innerWidth < 900;
+  const reduced = document.body.classList.contains('reduced-motion'), full = wantsFull();
+
+  // still and lite use the static layout, which is known now: show it at once instead of waiting for the 3D scene.
+  const still = () => {                                    // reduced motion: nothing travels; the floodlights fade up once
+    cine.classList.add('static');
+    if (getPrefs().motion === 'auto' && !$('.cine-motion', el)) {   // the system asked for this, not the visitor: say so and offer the switch
+      $('.cine-cta', el).insertAdjacentHTML('afterend', '<p class="cine-motion"><span>Animations are off because this device is set to reduce motion.</span><button class="btn sm" type="button" id="motion-on">Turn animations on</button></p>');
+      $('#motion-on', el).addEventListener('click', () => setPref('motion', 'full'));
+    }
+  };
+  const lite = () => {                                     // small window, or no scroll library: static layout, living backdrop
+    if (cine.classList.contains('lite')) return;
+    cine.classList.add('static', 'lite');
+    // The chapter blocks fade in as they are scrolled to. Applied without a transition so they do not fade out first.
+    $$('.cine-tape, .cine-prob, .cine-map', el).forEach((n) => { n.style.transition = 'none'; n.classList.add('reveal'); void n.offsetWidth; n.style.transition = ''; });
+    observeReveals(cine);
+  };
+  if (reduced) still(); else if (!full) lite();
+
   let stadium = null;
-  try { const mod = await import('../scenes/stadium.js'); stadium = mod.createStadium(canvas, { reduced: reduced || small }); } catch (e) { console.warn('WebGL stadium unavailable, using the static backdrop', e); canvas.remove(); stage.classList.add('no-gl'); }
+  try { const mod = await import('../scenes/stadium.js'); stadium = mod.createStadium(canvas, { reduced }); } catch (e) { console.warn('WebGL stadium unavailable, using the static backdrop', e); canvas.remove(); stage.classList.add('no-gl'); }
+  if (!el.isConnected) { stadium?.dispose(); return; }   // the page was redrawn or left while this loaded
   scene = stadium;
-  if (!el.isConnected) { stadium?.dispose(); return; }
   sbMatch(3869685).then((m) => stadium?.setNetwork([{ ...m.net[0], color: '#168FFF', flip: false }, { ...m.net[1], color: '#BEFF37', flip: true }])).catch(() => {});
   const placeNodes = () => { if (!stadium || cine.classList.contains('static')) return; $$('.cnode', el).forEach((n) => { const d = MAP[n.dataset.i], [x, y] = stadium.project(d.x, d.y); n.style.left = x + 'px'; n.style.top = y + 'px'; }); };
-  onResize = () => { stadium?.resize(); placeNodes(); }; addEventListener('resize', onResize);
+  // A window dragged across the size threshold switches between the lite hero and the full sequence.
+  let resizeTimer = 0;
+  onResize = () => { stadium?.resize(); placeNodes(); clearTimeout(resizeTimer); if (!reduced && wantsFull() !== full) resizeTimer = setTimeout(() => { if (el.isConnected && wantsFull() !== full) rerender(); }, 300); };
+  addEventListener('resize', onResize);
 
-  if (reduced || small || !stadium) {                     // static composition: same content, no pinning
-    cine.classList.add('static'); stadium?.setIntro(1); stadium?.setProgress(.19); return;
-  }
-  let gsap, ScrollTrigger;
-  try { gsap = (await import('gsap')).default; ScrollTrigger = (await import('gsap/ScrollTrigger')).ScrollTrigger; gsap.registerPlugin(ScrollTrigger); }
-  catch (e) { console.warn('GSAP unavailable, static layout', e); cine.classList.add('static'); stadium.setIntro(1); stadium.setProgress(.19); return; }
+  window.__gvHome = { stadium, mode: reduced ? 'still' : !full || !stadium ? 'lite' : 'full' };   // test hook
+  if (reduced) { stadium?.setProgress(.19); if (stadium) ambient(el, stadium, false); return; }
+  const mods = full && stadium ? await libs : null;
   if (!el.isConnected) return;
+  if (!mods) { window.__gvHome.mode = 'lite'; lite(); if (stadium) ambient(el, stadium, true); return; }
+  const gsap = mods[0].default, ScrollTrigger = mods[1].ScrollTrigger; gsap.registerPlugin(ScrollTrigger);
   gsapRef = gsap; cine.classList.add('pinned');
   const q = (s) => $$(s, el), state = { p: 0 }, intro = { v: 0 };
   gsap.to(intro, { v: 1, duration: 2.6, ease: 'power2.inOut', onUpdate: () => stadium.setIntro(intro.v) });
@@ -180,7 +208,26 @@ async function cinematic(el, nextMatchup, stopRotate) {
   io = new IntersectionObserver(([e]) => (e.isIntersecting ? stadium.start() : stadium.stop()), { threshold: 0 }); io.observe(cine);
   rotate = setInterval(() => { if (scrollY < 40 && !document.hidden && $('#custom', el).hidden) nextMatchup(); }, 9000);
   placeNodes(); ScrollTrigger.refresh();
-  window.__gvHome = { stadium, tl, placeNodes, intro: (v) => { gsap.killTweensOf(intro); stadium.setIntro(v); } };   // test hook: jump to any point of the sequence
+  window.__gvHome = { stadium, mode: 'full', tl, placeNodes, intro: (v) => { gsap.killTweensOf(intro); stadium.setIntro(v); } };   // test hook: jump to any point of the sequence
+}
+
+/* Motion without scrolling. The floodlights power up; with `drift` the camera also eases slowly back and forth through
+   the opening shots and the scene runs its own loop (flicker, dust, the turning ball), paused whenever it is off screen. */
+function ambient(el, stadium, drift) {
+  const t0 = performance.now(); let raf = 0, visible = true;
+  const frame = (now) => {
+    const s = (now - t0) / 1000, k = Math.min(1, s / 2.6);
+    stadium.setIntro(k * k * (3 - 2 * k));
+    if (drift) stadium.setProgress(.19 + .1 * Math.sin(s * .17));
+    raf = visible && (drift || k < 1) ? requestAnimationFrame(frame) : 0;
+  };
+  stadium.setIntro(0); raf = requestAnimationFrame(frame);
+  if (drift) {
+    stadium.start();
+    io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (!visible) return stadium.stop(); stadium.start(); if (!raf) raf = requestAnimationFrame(frame); }, { threshold: 0 });
+    io.observe($('.cine-canvas', el));
+  }
+  ambientOff = () => { visible = false; cancelAnimationFrame(raf); raf = 0; };
 }
 
 /* ───────── widgets below the fold ───────── */
@@ -242,6 +289,7 @@ function widgets(el, state, seasons, wc26) {
 
 export function destroy() {
   clearInterval(rotate); rotate = null; io?.disconnect(); io = null;
+  ambientOff?.(); ambientOff = null; delete window.__gvHome;
   if (onResize) removeEventListener('resize', onResize); onResize = null;
   tl?.kill(); st?.kill(); tl = st = null; gsapRef = null;
   scene?.dispose(); scene = null;

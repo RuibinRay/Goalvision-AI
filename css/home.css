@@ -76,8 +76,11 @@
 .cine-hint i { width: 1px; height: 34px; background: linear-gradient(#BEFF37, transparent); animation: hint 1.8s var(--ease) infinite; transform-origin: top; }
 @keyframes hint { 0% { transform: scaleY(0); } 60% { transform: scaleY(1); opacity: 1; } 100% { transform: scaleY(1); opacity: 0; } }
 
-/* pinned: chapter layers wait for the scroll timeline */
-.cine.pinned .cine-tape, .cine.pinned .cine-prob, .cine.pinned .cine-aerial, .cine.pinned .cine-map { visibility: hidden; }
+/* Until the layout is chosen (static) the chapter layers stay hidden: in the scroll sequence the timeline reveals
+   them one by one, and while the libraries are still loading they must not pile up on the first screen. */
+.cine:not(.static) .cine-tape, .cine:not(.static) .cine-prob, .cine:not(.static) .cine-aerial, .cine:not(.static) .cine-map { visibility: hidden; }
+/* …and the opening shot waits too, so it can make its entrance instead of flashing in and out. */
+.cine:not(.static):not(.pinned) .cine-title > *, .cine:not(.static):not(.pinned) .cine-player img, .cine:not(.static):not(.pinned) .cine-switch, .cine:not(.static):not(.pinned) .cine-rail, .cine:not(.static):not(.pinned) .cine-hint { opacity: 0; }
 
 /* static composition (phones, reduced motion, no WebGL): one screen, then the chapters as ordinary blocks */
 .cine.static { background: #080C13; padding-bottom: 28px; }
@@ -101,6 +104,15 @@
 .cine.static .cine-stage > .cine-player { margin-top: -10px; order: 2; }
 .cine.static .cine-title { order: 1; } .cine.static .cine-switch { order: 3; } .cine.static .cine-tape { order: 4; } .cine.static .cine-prob { order: 5; padding-inline: var(--gutter); } .cine.static .cine-map { order: 6; }
 .cine.static .cine-stage > .cine-player { height: min(42vh, 56vw); justify-self: center; max-width: 420px; }
+
+/* lite motion (small windows, or no scroll library): the static layout with entrances; the 3D backdrop moves by itself */
+.cine.lite .cine-title > * { animation: cine-rise .9s var(--ease-out) both; animation-delay: calc(.15s + var(--n, 0) * 90ms); }
+.cine.lite .cine-title > :nth-child(2) { --n: 1; } .cine.lite .cine-title > :nth-child(3) { --n: 2; } .cine.lite .cine-title > :nth-child(4) { --n: 3; }
+.cine.lite .cine-player img { animation: cine-rise 1.2s var(--ease-out) .5s both; } .cine.lite .cine-player.b img { animation-delay: .62s; }
+.cine.lite .cine-switch { animation: cine-rise .8s var(--ease-out) 1.1s both; }
+@keyframes cine-rise { from { opacity: 0; transform: translateY(40px); } }
+/* the note shown when animations are off because the device asks for reduced motion */
+.cine-motion { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 12px; width: fit-content; max-width: 100%; margin: 18px auto 0; padding: 8px 10px 8px 16px; border-radius: 18px; background: rgba(8, 13, 21, .78); border: 1px solid var(--line-2); font-size: 13.5px; font-weight: 600; color: var(--text-2); text-align: left; }
 
 /* ───────── widgets ───────── */
 .fx-wrap { display: grid; } .fx-lg { padding: 10px 16px 0; font-size: 12px; font-weight: 700; color: var(--text-3); }
