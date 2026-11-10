@@ -36,7 +36,7 @@ The site is static, so it can never hold an API key. It therefore ships in **DEM
 | Line-ups, timelines, match statistics | 147 international matches (StatsBomb Open Data) | per provider plan |
 | Squads, managers, top scorers, Champions League 2026/27 | not available | yes |
 
-Switch to LIVE by setting `backend` in [js/core/config.js](js/core/config.js), or per browser under **My Dashboard → Data connection**.
+Switch to LIVE by setting `backend` in [js/core/config.js](js/core/config.js), or per browser under **My Dashboard → Data connection**. The site only reports LIVE once that backend answers and says it has a provider key; if it is unreachable or has no key yet, the site stays in DEMO and the status chip says why.
 
 ## Data sources
 

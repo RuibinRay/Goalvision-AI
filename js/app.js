@@ -1,6 +1,7 @@
 import { route, start, rerender } from './core/router.js';
 import { loadRegistry, getPrefs, setPref } from './core/store.js';
 import { mountNav, mountFooter, applyTheme } from './components/chrome.js';
+import { hasBackend, backendHealth } from './services/live.js';
 import './components/ui.js';
 
 // Preferences that must apply before first paint: theme and motion.
@@ -37,8 +38,12 @@ route('/history',             () => import('./views/history.js'));
 route('/dashboard',           () => import('./views/dashboard.js'));
 route('/404',                 () => Promise.resolve({ title: 'Not found', render: (el) => { el.innerHTML = '<div class="container page-head"><h1>Offside</h1><p class="lead">That page does not exist. <a class="link" href="#/">Back to the centre circle</a>.</p></div>'; } }));
 
+document.addEventListener('live-change', () => rerender());         // DEMO ↔ LIVE: pages drawn under the old mode redraw
+
 try {
-  await loadRegistry();
+  // A configured backend counts as LIVE only once it answers with a provider. Give it a moment so the first
+  // paint is in the right mode; if it is slower, the site starts in DEMO and redraws when the answer arrives.
+  await Promise.all([loadRegistry(), hasBackend() && Promise.race([backendHealth(), new Promise((r) => setTimeout(r, 2500))])]);
   mountNav(document.getElementById('nav'));
   mountFooter(document.getElementById('footer'));
   start();

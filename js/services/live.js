@@ -11,8 +11,13 @@ import { getPrefs } from '../core/store.js';
 import { CONFIG } from '../core/config.js';
 
 export const backendUrl = () => (getPrefs().backend || CONFIG.backend || '').replace(/\/+$/, '');
-export const isLive = () => !!backendUrl();
-let health = null;
+export const hasBackend = () => !!backendUrl();
+let health = null, ready = false;
+/**
+ * LIVE means more than "a URL is configured": the backend must have answered and report a provider key.
+ * A backend that is unreachable, or deployed without a key, leaves the whole site in DEMO mode.
+ */
+export const isLive = () => hasBackend() && ready;
 
 async function call(path, { timeout = 9000 } = {}) {
   const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), timeout);
@@ -23,10 +28,14 @@ async function call(path, { timeout = 9000 } = {}) {
     return body;
   } catch (e) { throw new Error(e.name === 'AbortError' ? 'The live backend did not answer in time' : e.message); } finally { clearTimeout(t); }
 }
-/** { ok, provider, plan, refreshSeconds } or { ok:false, error }. Cached for the session. */
+/** { ok, provider, refreshSeconds } or { ok:false, error, noKey? }. Cached for the session; also sets what isLive() reports. */
 export async function backendHealth(force = false) {
-  if (!isLive()) return { ok: false, error: 'No backend configured' };
-  if (!health || force) health = call('/v1/health').then((h) => ({ ok: true, ...h })).catch((e) => ({ ok: false, error: e.message }));
+  if (!hasBackend()) { ready = false; health = null; return { ok: false, error: 'No backend configured' }; }
+  if (!health || force) {
+    const mine = health = call('/v1/health')
+      .then((h) => (h.provider ? { ok: true, ...h } : { ok: false, noKey: true, error: 'The backend is running but has no provider API key yet' }), (e) => ({ ok: false, error: e.message }))
+      .then((h) => { if (health === mine) ready = h.ok; return h; });   // a newer check wins over a slow older one
+  }
   return health;
 }
 export const liveMatches = (date, competition) => call(`/v1/matches?date=${date}${competition ? '&competition=' + encodeURIComponent(competition) : ''}`);

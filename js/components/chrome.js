@@ -2,7 +2,7 @@
 import { $, $$, esc, html, ICON, fmt } from '../core/dom.js';
 import { NAV, CONFIG } from '../core/config.js';
 import { allClubs, leagues, registry, getPrefs, setPref, sbPlayers, SB_COMPS, league, SEASON } from '../core/store.js';
-import { isLive, backendHealth } from '../services/live.js';
+import { isLive, hasBackend, backendHealth } from '../services/live.js';
 import { crest } from './ui.js';
 
 export function mountNav(el) {
@@ -32,17 +32,17 @@ export function mountNav(el) {
     if ((ev.key === '/' || (ev.key === 'k' && (ev.metaKey || ev.ctrlKey))) && !/input|textarea|select/i.test(document.activeElement.tagName)) { ev.preventDefault(); openPalette(); }
     if (ev.key === 'Escape') { closePalette(); el.classList.remove('open'); }
   });
-  refreshStatus(); document.addEventListener('prefs', (e) => { if (e.detail.key === 'backend') refreshStatus(); });
+  refreshStatus(); document.addEventListener('prefs', (e) => { if (e.detail.key === 'backend') refreshStatus(true); });
 }
 export const applyTheme = (t) => { document.documentElement.dataset.theme = t; document.querySelector('meta[name=theme-color]')?.setAttribute('content', t === 'dark' ? '#080C13' : '#EDF1F6'); };
-async function refreshStatus() {
+async function refreshStatus(force = false) {
   const chip = $('#status-chip'); if (!chip) return;
-  chip.classList.remove('live'); chip.querySelector('span').textContent = 'DEMO';
-  chip.title = `DEMO mode: dated data snapshot (league results to ${fmt.date(registry().leagues[0].seasons.at(-1).lastResult)}). Connect a backend for live data.`;
-  if (!isLive()) return;
-  const h = await backendHealth(true);
-  if (h.ok) { chip.classList.add('live'); chip.querySelector('span').textContent = 'LIVE'; chip.title = `Live data via ${h.provider}`; }
-  else { chip.querySelector('span').textContent = 'DEMO · backend offline'; chip.title = h.error; }
+  const was = isLive(), h = hasBackend() ? await backendHealth(force) : null, label = chip.querySelector('span');
+  chip.classList.toggle('live', !!h?.ok);
+  if (h?.ok) { label.textContent = 'LIVE'; chip.title = `Live data via ${h.provider}`; }
+  else if (h) { label.textContent = h.noKey ? 'DEMO · no API key' : 'DEMO · backend offline'; chip.title = `${h.error}. The site is using the dated snapshot.`; }
+  else { label.textContent = 'DEMO'; chip.title = `DEMO mode: dated data snapshot (league results to ${fmt.date(registry().leagues[0].seasons.at(-1).lastResult)}). Connect a backend for live data.`; }
+  if (was !== isLive()) document.dispatchEvent(new CustomEvent('live-change'));   // pages drawn under the old mode redraw
 }
 
 export function mountFooter(el) {

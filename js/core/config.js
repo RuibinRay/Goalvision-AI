@@ -4,7 +4,7 @@
  * A visitor can also set it for their own browser in My Dashboard → Data connection.
  */
 export const CONFIG = {
-  backend: '',                       // e.g. 'https://goalvision-api.<account>.workers.dev'
+  backend: 'https://goalvision-api.goalvision-api.workers.dev',   // the deployed worker; '' forces DEMO mode
   repo: 'https://github.com/RuibinRay/Goalvision-AI',   // source link in the footer; '' hides it
   liveRefreshSeconds: 60,            // lower bound; the backend may ask for a slower cadence
 };
