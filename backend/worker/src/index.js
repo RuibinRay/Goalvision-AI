@@ -37,18 +37,26 @@ function spend(p) { const b = budget[p], now = Date.now(); b.used = b.used.filte
 
 async function upstream(provider, path, env) {
   const base = provider === 'fd' ? 'https://api.football-data.org/v4' : 'https://v3.football.api-sports.io';
-  const headers = provider === 'fd' ? { 'X-Auth-Token': env.FOOTBALL_DATA_KEY } : { 'x-apisports-key': env.API_FOOTBALL_KEY };
+  // Trim: a key pasted with a trailing space or newline is otherwise rejected as invalid.
+  const headers = provider === 'fd' ? { 'X-Auth-Token': (env.FOOTBALL_DATA_KEY || '').trim() } : { 'x-apisports-key': (env.API_FOOTBALL_KEY || '').trim() };
   let lastErr;
   for (let attempt = 0; attempt < 3; attempt++) {
     if (!spend(provider)) throw Object.assign(new Error('Upstream request budget exhausted; serving cache where possible'), { status: 429 });
     try {
       const r = await fetch(base + path, { headers, signal: AbortSignal.timeout(8000) });
       if (r.status === 429 || r.status >= 500) { lastErr = Object.assign(new Error(`Provider returned HTTP ${r.status}`), { status: 502 }); const ra = Number(r.headers.get('retry-after')); await new Promise((res) => setTimeout(res, Math.min(4000, (ra > 0 ? ra * 1000 : 400 * 2 ** attempt)))); continue; }
-      if (!r.ok) throw Object.assign(new Error(`Provider returned HTTP ${r.status}`), { status: r.status === 403 ? 403 : 502 });
+      if (!r.ok) {   // any other 4xx is the key or the request itself: pass on what the provider said and do not retry
+        const detail = await r.json().then((b) => String(b?.message || b?.error || '').slice(0, 140), () => '');
+        if ([400, 401, 403].includes(r.status)) {   // owner-only log (wrangler tail): the key's shape, never its value
+          const k = Object.values(headers)[0];
+          console.warn(`${provider}: HTTP ${r.status} ${detail}. Stored key shape: ${k.length} characters, ${/^[0-9a-f]+$/i.test(k) ? 'hex only' : /^[A-Za-z0-9]+$/.test(k) ? 'letters and digits' : 'contains spaces, quotes or other symbols'}`);
+        }
+        throw Object.assign(new Error(`Provider returned HTTP ${r.status}${detail ? ': ' + detail : ''}`), { status: r.status === 403 ? 403 : 502, final: true });
+      }
       const body = await r.json();
       if (provider === 'af' && body.errors && !Array.isArray(body.errors) && Object.keys(body.errors).length) throw Object.assign(new Error('API-Football: ' + Object.values(body.errors).join('; ')), { status: 502 });
       return body;
-    } catch (e) { lastErr = e; if (e.status && e.status !== 502) throw e; await new Promise((res) => setTimeout(res, 300 * 2 ** attempt)); }
+    } catch (e) { lastErr = e; if (e.final || (e.status && e.status !== 502)) throw e; await new Promise((res) => setTimeout(res, 300 * 2 ** attempt)); }
   }
   throw lastErr;
 }
