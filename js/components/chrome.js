@@ -57,7 +57,7 @@ export function mountFooter(el) {
       <li><a href="https://www.thesportsdb.com" target="_blank" rel="noopener">TheSportsDB</a> · player cut-outs</li>
       <li><a href="https://flagcdn.com" target="_blank" rel="noopener">Flagcdn</a> · national flags</li>
       <li>Club crests are trademarks of their owners, shown for identification only.</li></ul></div>
-    <div class="legal"><span>Snapshot built ${fmt.stamp(reg.generatedAt)} · season ${fmt.season(SEASON)}</span><span>Built with HTML, CSS, JavaScript, Three.js, GSAP and ECharts${CONFIG.repo && ` · <a class="link" href="${esc(CONFIG.repo)}" target="_blank" rel="noopener">Source on GitHub</a>`}</span></div>
+    <div class="legal"><span>Data refreshed ${fmt.stamp(reg.generatedAt)} · season ${fmt.season(SEASON)}</span><span>Built with HTML, CSS, JavaScript, Three.js, GSAP and ECharts${CONFIG.repo && ` · <a class="link" href="${esc(CONFIG.repo)}" target="_blank" rel="noopener">Source on GitHub</a>`}</span></div>
   </div>`;
 }
 

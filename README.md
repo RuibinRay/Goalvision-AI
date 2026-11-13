@@ -31,7 +31,7 @@ The site is static, so it can never hold an API key. It therefore ships in **DEM
 
 | | DEMO (this repository) | LIVE (after deploying `backend/worker`) |
 |---|---|---|
-| League tables, fixtures, results | openfootball snapshot (results to 20 Sep 2026 at build time) | current, from the provider |
+| League tables, fixtures, results | snapshot refreshed daily by the workflow below | current, from the provider |
 | Live scores, clocks, events | not available; past-dated fixtures show "result pending" | scores and match status at the provider's refresh cadence, last refresh time shown; goals, cards and line-ups only on provider plans that include them |
 | Line-ups, timelines, match statistics | 147 international matches (StatsBomb Open Data) | per provider plan |
 | Squads, managers, top scorers, Champions League 2026/27 | not available | yes |
@@ -58,17 +58,17 @@ All models are trained and validated by `scripts/train_models.mjs` with the same
 * Walk-forward: each season is forecast by models fitted on earlier seasons only. Ensemble weights come from earlier out-of-sample forecasts.
 * Hyper-parameters were chosen on 2012/13 → 2015/16, before the reported window.
 
-Out-of-sample results, 2016/17 → 2026/27, 18,166 matches, five leagues:
+Out-of-sample results, 2016/17 → 2026/27, five leagues, as retrained on results to 8 November 2026 (18,416 matches). The models are retrained every day that new results arrive, so these figures move slightly; the current ones are always in `data/models/eval.json` and on the Validation tab.
 
 | Model | Log loss | Brier | Accuracy |
 |---|---|---|---|
-| **Ensemble** | **0.9821** | 0.5848 | 53.0% |
-| Multinomial logistic | 0.9832 | 0.5854 | 53.0% |
-| Dixon-Coles | 0.9836 | 0.5856 | 53.1% |
-| Elo + ordered logit | 0.9839 | 0.5860 | 52.8% |
-| Poisson | 0.9842 | 0.5860 | 53.1% |
-| Gradient-boosted trees | 0.9904 | 0.5896 | 52.6% |
-| Baseline: historical outcome rates | 1.0711 | 0.6479 | 44.1% |
+| **Ensemble** | **0.9815** | 0.5843 | 53.1% |
+| Multinomial logistic | 0.9825 | 0.5849 | 53.0% |
+| Dixon-Coles | 0.9829 | 0.5852 | 53.1% |
+| Elo + ordered logit | 0.9831 | 0.5855 | 52.9% |
+| Poisson | 0.9835 | 0.5855 | 53.1% |
+| Gradient-boosted trees | 0.9896 | 0.5890 | 52.7% |
+| Baseline: historical outcome rates | 1.0707 | 0.6477 | 44.1% |
 | Baseline: one third each | 1.0986 | 0.6667 | 44.1% |
 
 The live figures are in `data/models/eval.json` and on the Validation tab, with calibration, by-season and by-league breakdowns. National-team and cross-league forecasts are rating-only and are not part of this validation; the UI says so.
@@ -133,9 +133,22 @@ Then open http://localhost:8777. The site needs a static server because it loads
 node --test tests/*.test.mjs
 ```
 
-43 tests: prediction maths, provider adapters, data integrity (logos, fixtures, event files) and the backend with a mocked provider.
+46 tests: prediction maths, provider adapters, data integrity (logos, fixtures, event files), the backend with a mocked provider, and the daily refresh safeguards.
 
-## Refresh the data
+## Daily refresh
+
+`.github/workflows/refresh-data.yml` runs every day at 05:40 UTC (and on demand from the Actions tab):
+
+1. `scripts/refresh_daily.mjs` asks the backend for the current season of each league and rewrites `data/leagues/<league>/<season>.json`, the season summary in `data/registry.json` and a run record in `data/refresh.json`.
+2. If results changed, `scripts/train_models.mjs` retrains the ratings and regenerates the validation report, so forecasts and Elo rankings follow the latest matches.
+3. The tests run. If one fails, nothing is committed or published.
+4. The data is committed and the Pages deploy is started.
+
+A season is replaced only if it has the right clubs and fixture count, well-formed rows, no result dated in the future and no fewer results than the file it replaces; a league that fails the check keeps its file and is reported in `data/refresh.json`. The job needs no secret: it reads the public backend, which holds the provider key.
+
+What it does not refresh: completed tournaments (World Cups, Champions League 2025/26, the StatsBomb event data), which do not change. Live scores, tables, squads and top scorers never needed it; the site reads those from the backend as you browse. At the start of a new season the registry (clubs, promoted and relegated sides) still needs a manual rebuild with `scripts/build_data.py`.
+
+## Rebuild from the open archives
 
 ```bash
 # 1. download the open datasets into a scratch folder (see the URL lists at the top of each script)

@@ -1,0 +1,35 @@
+name: Daily data refresh
+# Every morning: pull the current season from the project's backend, retrain the forecast ratings when results changed,
+# run the tests, commit the data and republish the site. Nothing is published if a test fails.
+on:
+  schedule: [{ cron: "40 5 * * *" }]   # 05:40 UTC, after the previous evening's European matches are final
+  workflow_dispatch:
+permissions: { contents: write, actions: write }
+concurrency: { group: refresh-data, cancel-in-progress: false }
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 26 }
+      - name: Refresh the current season of each league
+        id: data
+        run: node scripts/refresh_daily.mjs
+      - name: Retrain and re-validate the forecast models
+        if: steps.data.outputs.changed == 'true'
+        run: node scripts/train_models.mjs
+      - name: Tests must pass before anything is published
+        run: node --test tests/*.test.mjs
+      - name: Commit the refreshed data and republish
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          git config user.name "goalvision-bot"
+          git config user.email "goalvision-bot@users.noreply.github.com"
+          git add data
+          if git diff --cached --quiet; then echo "Nothing changed."; exit 0; fi
+          git commit -m "data: daily refresh $(date -u +%F)"
+          git push
+          # A push made by a workflow does not start other workflows, so ask for the Pages deploy explicitly.
+          gh workflow run pages.yml --ref "${{ github.ref_name }}"
